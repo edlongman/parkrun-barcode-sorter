@@ -41,4 +41,10 @@ void disable(){
     TIMSK2 &= ~_BV(TOIE2);
 }
 
+void set(uint8_t val){
+    disable();
+    OCR2B = PWM_CALC(val);
+    enable();
+}
+
 }
