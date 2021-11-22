@@ -5,6 +5,7 @@
 #include "FlapGovenor.h"
 #include "MotorController.h"
 #include "ConsoleUart.h"
+#include "ScanInterpreter.h"
 
 const uint8_t buff_size = 16;
 
@@ -16,6 +17,7 @@ int main(void){
     ConsoleUart::init();
     ConsoleUart::enable();
     char tx_buffer[buff_size] = "Hello World";
+    const char set_response[] = "SET MOTOR PWM";
     char rx_buffer[buff_size];
     sei();
     ConsoleUart::scanLine(rx_buffer, buff_size);
@@ -23,8 +25,16 @@ int main(void){
         ConsoleUart::blockingSendLine(tx_buffer, buff_size);
         _delay_ms(500);
         if(ConsoleUart::isScanComplete()){
-            // Copy into tx buffer and setup next scanning
-            memcpy(tx_buffer, rx_buffer, buff_size);
+            // set motor speed
+            uint8_t setpoint = 0;
+            if(ScanInterpreter::readSetInteger(setpoint, rx_buffer, buff_size)){
+                MotorController::set(setpoint);
+                ConsoleUart::blockingSendLine(set_response, 15);
+            }
+            else{
+                // Copy into tx buffer and setup next scanning
+                memcpy(tx_buffer, rx_buffer, buff_size);
+            }
             ConsoleUart::scanLine(rx_buffer, buff_size);
         }
     }
