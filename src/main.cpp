@@ -27,8 +27,8 @@ int main(void){
         if(ConsoleUart::isScanComplete()){
             // set motor speed
             uint8_t setpoint = 0;
-            if(ScanInterpreter::readSetInteger(setpoint, rx_buffer, buff_size)){
-                MotorController::set(setpoint);
+            if(ScanInterpreter::readPWMInteger(setpoint, rx_buffer, buff_size)){
+                MotorController::setPWM(setpoint);
                 ConsoleUart::blockingSendLine(set_response, 15);
             }
             else{

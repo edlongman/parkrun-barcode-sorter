@@ -10,7 +10,7 @@ void enable();
 void disable();
 
 // Set motor speed between min (0) and max(100)
-void set(uint8_t val);
+void setPWM(uint8_t val);
 
 }
 

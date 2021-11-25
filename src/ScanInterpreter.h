@@ -5,7 +5,7 @@
 
 namespace ScanInterpreter{
 
-bool readSetInteger(uint8_t &val, const char* buffer, const uint8_t length);
+bool readPWMInteger(uint8_t &val, const char* buffer, const uint8_t length);
 
 }
 

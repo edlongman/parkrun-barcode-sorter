@@ -14,6 +14,7 @@ const uint8_t prescaler = 32;
 const uint8_t timer_top = TIMER_TOP(timer_frequency, prescaler);
 
 static uint8_t interrupt_prescaler = 0;
+// Motor Controller interrupt with downscaled control check
 ISR(TIMER2_OVF_vect){
     const uint8_t interrupt_count_top = timer_frequency/control_frequency;
     if(++interrupt_prescaler >= interrupt_count_top){
@@ -21,6 +22,7 @@ ISR(TIMER2_OVF_vect){
         PIND |= _BV(PIN5);
     }
 }
+
 void init(){
     // Intialize Timer at 10% Duty cycle
     // Fast PWM mode, count to OCR2A, clear OC2B at BOTTOM, set at Compare Match
@@ -37,11 +39,12 @@ void init(){
 void enable(){
     TIMSK2 |= _BV(TOIE2);
 }
+
 void disable(){
     TIMSK2 &= ~_BV(TOIE2);
 }
 
-void set(uint8_t val){
+void setPWM(uint8_t val){
     disable();
     OCR2B = PWM_CALC(val);
     enable();
