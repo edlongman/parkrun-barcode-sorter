@@ -3,7 +3,7 @@
 #include <util/delay.h>
 #include <string.h>
 #include "FlapGovenor.h"
-#include "MotorController.h"
+#include <MotorController.h>
 #include "ConsoleUart.h"
 #include "ScanInterpreter.h"
 
