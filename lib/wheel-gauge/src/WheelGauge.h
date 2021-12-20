@@ -12,7 +12,8 @@ void init();
 void enable();
 void disable();
 int16_t read(); // return rotation of outside wheel in milliturns
-float milliturnsScaling();
+int16_t milliturnsDistance(int16_t prev, int16_t current);
+int16_t rawFromMilliturns(int16_t milliturns);
 uint8_t encoderState();
 
 }

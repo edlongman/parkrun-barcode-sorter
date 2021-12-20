@@ -15,16 +15,16 @@ ISR(PCINT3_vect){
     encoder_state = ((encoder_state & channel_mask) >> 1) | (PIND & channel_mask);
     switch(encoder_state>>4){
         case 0b0010: case 0b1011: case 0b1101: case 0b0100:
-            motor_position++;
-            break;
-        case 0b0001: case 0b0111: case 0b1110: case 0b1000:
             motor_position--;
             break;
+        case 0b0001: case 0b0111: case 0b1110: case 0b1000:
+            motor_position++;
+            break;
         case 0b1010: case 0b1001:
-            motor_position+=2;
+            motor_position-=2;
             break;
         case 0b0101: case 0b0110:
-            motor_position-=2;
+            motor_position+=2;
             break;
         case 0b0000: case 0b1100: case 0b1111: case 0b0011:
         default:
@@ -60,8 +60,12 @@ int16_t read(){
     return motor_position;
 }
 
-float milliturnsScaling() {
-    return 1000.0f/gearing/motor_counts_per_rev;
+int16_t milliturnsDistance(int16_t prev, int16_t current){
+    return (int32_t)(current-prev)*1000/gearing/motor_counts_per_rev;
+}
+
+int16_t rawFromMilliturns(int16_t milliturns){
+    return (int32_t)milliturns*gearing*motor_counts_per_rev/1000;
 }
 
 uint8_t encoderState(){
