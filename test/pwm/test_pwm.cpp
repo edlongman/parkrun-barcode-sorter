@@ -4,20 +4,20 @@
 #include <unity.h>
 
 void pwm_ramp(){
-    MotorController::set(0);
+    MotorController::setPWM(0);
     TEST_ASSERT_EQUAL(0, OCR2B);
     _delay_ms(200);
-    MotorController::set(63);
+    MotorController::setPWM(63);
     _delay_ms(500);
-    MotorController::set(127);
+    MotorController::setPWM(127);
     TEST_ASSERT_EQUAL(124, OCR2B);
     _delay_ms(1000);
-    MotorController::set(191);
+    MotorController::setPWM(191);
     _delay_ms(1000);
-    MotorController::set(255);
+    MotorController::setPWM(255);
     TEST_ASSERT_EQUAL(250, OCR2B);
     _delay_ms(1000);
-    MotorController::set(0);
+    MotorController::setPWM(0);
 
 }
 
