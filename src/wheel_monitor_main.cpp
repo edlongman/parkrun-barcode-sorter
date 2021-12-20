@@ -27,7 +27,7 @@ int main(void){
     while(1){
         int16_t new_position = WheelGauge::read();
         int16_t speed = (new_position - prev_position)*2;
-        sprintf(tx_buffer, "%limT", (int32_t)(WheelGauge::milliturnsScaling()*(float)(new_position-base_distance)));
+        sprintf(tx_buffer, "%limT", (int32_t)(WheelGauge::milliturnsDistance(base_distance, new_position)));
         //sprintf(tx_buffer, "%imT", (new_position-base_distance));
         //sprintf(tx_buffer, "state %x", WheelGauge::encoderState());
         prev_position = new_position;
@@ -36,12 +36,13 @@ int main(void){
         if(ConsoleUart::isScanComplete()){
             // set motor speed
             uint8_t setpoint = 0;
-            if(ScanInterpreter::readSetInteger(setpoint, rx_buffer, buff_size)){
+            int16_t new_base_distance = 0;
+            if(ScanInterpreter::readPWMInteger(setpoint, rx_buffer, buff_size)){
                 MotorController::setPWM(setpoint);
                 ConsoleUart::blockingSendLine(set_response, 15);
             }
-            else if(ScanInterpreter::readResetDistance(base_distance, rx_buffer, buff_size)){
-                base_distance /= WheelGauge::milliturnsScaling();
+            else if(ScanInterpreter::readResetDistance(new_base_distance, rx_buffer, buff_size)){
+                base_distance += WheelGauge::rawFromMilliturns(new_base_distance);
             }
             else{
                 // Copy into tx buffer and setup next scanning
