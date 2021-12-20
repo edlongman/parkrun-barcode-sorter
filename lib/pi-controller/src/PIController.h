@@ -9,8 +9,8 @@ private:
     int16_t setpoint;
     void reset();
 
-    int8_t deci_K_p = 7;
-    int8_t deci_K_i = 27;
+    uint8_t deci_K_p = 7;
+    uint8_t deci_K_i = 27;
 public: 
     int16_t error_integral = 0;
     PIController(uint16_t deci_freq);

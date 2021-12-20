@@ -16,9 +16,9 @@ void pid_step(){
     TEST_ASSERT_EQUAL(1182, controller.error_integral);
     TEST_ASSERT_EQUAL(246, control_effort);
     TEST_ASSERT_EQUAL(216, controller.stepControlEstimation(190));
-    TEST_ASSERT_EQUAL(196, controller.stepControlEstimation(230));
-    TEST_ASSERT_EQUAL(171, controller.stepControlEstimation(270));
-    TEST_ASSERT_EQUAL(162, controller.stepControlEstimation(285));
+    TEST_ASSERT_EQUAL(195, controller.stepControlEstimation(230));
+    TEST_ASSERT_EQUAL(170, controller.stepControlEstimation(270));
+    TEST_ASSERT_EQUAL(161, controller.stepControlEstimation(285));
 }
 
 int main(void){

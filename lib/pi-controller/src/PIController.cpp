@@ -3,6 +3,7 @@
 PIController::PIController(uint16_t _deci_freq){
     deci_freq = _deci_freq;
     if(deci_freq < (int16_t)deci_K_i) deci_K_i = deci_freq;
+    if(deci_freq < 10) deci_K_i = 10;
     if(deci_K_p>10) deci_K_p = 10;
 }
 
@@ -22,9 +23,9 @@ uint8_t PIController::stepControlEstimation(int16_t current_speed){
     __builtin_add_overflow(error_integral, error, &error_integral);
 
     int16_t unity_integral_effort;
-    __builtin_mul_overflow(error_integral,deci_K_i,&unity_integral_effort);
+    __builtin_mul_overflow(error_integral/10,deci_K_i,&unity_integral_effort);
     uint16_t control_effort = 0;
-    __builtin_add_overflow(unity_integral_effort/deci_freq, error/10*deci_K_p, &control_effort);
+    __builtin_add_overflow(unity_integral_effort*10/deci_freq, error/10*deci_K_p, &control_effort);
     if(control_effort>UINT8_MAX)return UINT8_MAX;
     else if(control_effort<0)return 0;
     return control_effort;
