@@ -14,7 +14,7 @@ void test_encoder_output(){
         else{
             int16_t difference = new_position-prev_position;
             TEST_ASSERT_GREATER_THAN_MESSAGE(0, difference, "Direction is wrong on encoder output");
-            TEST_ASSERT_INT_WITHIN_MESSAGE(1, 3 , difference, "Encoder output not correct magnitude")
+            TEST_ASSERT_INT_WITHIN_MESSAGE(1, 3 , difference, "Encoder output not correct magnitude");
             UnityPrint("In 100us, Encoder moved approximately ");
             UnityPrintNumber(difference);
             prev_position = new_position;
