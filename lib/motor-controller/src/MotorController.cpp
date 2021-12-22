@@ -1,6 +1,8 @@
 #include "MotorController.h"
+#include <WheelGauge.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <PIController.h>
 
 namespace MotorController{
 
@@ -9,20 +11,47 @@ namespace MotorController{
 #define PWM_CALC(percentage) (uint16_t)(timer_top)*percentage/255
 
 const uint16_t timer_frequency = 24000;
-const uint8_t control_frequency = 25;
+const uint8_t control_frequency = 50;
 const uint8_t default_pwm_pc = 10;
 const uint8_t prescaler = 1;
 const uint8_t timer_top = PHASE_CORRECT_TOP(timer_frequency, prescaler);
 
-static uint8_t interrupt_prescaler = 0;
+static int16_t volatile raw_speed = 0;
+
+// Used when switching mode and in interrupt
+// to control if PI Control is active or just pwm
+static volatile bool PI_control_active = 0;
+static volatile PIController controller{control_frequency*10};
+
+// Internal PWM value access
+void _setPWM(uint8_t val){
+    disable();
+    OCR2B = PWM_CALC(val);
+    enable();
+}
+
+int16_t volatile observation = 0;
+
+static int16_t motor_position = 0;
+static uint16_t interrupt_prescaler = 0;
 // Motor Controller interrupt with downscaled control check
 ISR(TIMER2_OVF_vect){
     const uint16_t interrupt_count_top = timer_frequency/control_frequency;
     if(++interrupt_prescaler >= interrupt_count_top){
         interrupt_prescaler = 0;
-        PIND |= _BV(PIN5);
+        int16_t new_motor_position = WheelGauge::read();
+        if(PI_control_active){
+            int16_t motor_difference = new_motor_position - motor_position;
+            int16_t speed;
+            __builtin_mul_overflow(motor_difference, (int16_t)control_frequency, &speed);
+            raw_speed = speed;
+            _setPWM(controller.stepControlEstimation(speed, observation));
+        }
+        motor_position = new_motor_position;
+        PINB |= _BV(PIN7);
     }
 }
+
 
 void init(){
     // Intialize Timer at 10% Duty cycle
@@ -34,7 +63,8 @@ void init(){
     OCR2A = timer_top;
     TIMSK2 = 0;
     OCR2B = PWM_CALC(default_pwm_pc);
-    DDRD |= _BV(PIN5) | _BV(PIN6);
+    DDRD |=  _BV(PIN6);
+    DDRB |= _BV(PIN7);
 }
 
 void enable(){
@@ -46,9 +76,28 @@ void disable(){
 }
 
 void setPWM(uint8_t val){
+    PI_control_active = 0;
+    _setPWM(val);
+}
+
+int16_t setSpeed(int16_t milliturns_per_sec){
+    int16_t encoder_per_sec = WheelGauge::rawFromMilliturns(milliturns_per_sec);
     disable();
-    OCR2B = PWM_CALC(val);
+    int16_t ret = controller.setSpeed(encoder_per_sec);
     enable();
+    PI_control_active = 1;
+    return ret;
+}
+
+int16_t getSetpoint(){
+    return controller.getSetpoint();
+}
+
+int16_t getSpeed(){
+    MotorController::disable();
+    int16_t speed_cache =  raw_speed;
+    MotorController::enable();
+    return speed_cache;
 }
 
 }

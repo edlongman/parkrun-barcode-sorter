@@ -2,6 +2,7 @@
 #include <unity.h>
 #include <util/delay.h>
 #include <avr/io.h>
+#include <avr/interrupt.h>
 
 void test_encoder_output(){
     // Expected rate for 1Hz motor of 1ms increments
@@ -29,6 +30,7 @@ int main(void){
     DDRD |= _BV(6);
     WheelGauge::init();
     WheelGauge::enable();
+    sei();
     _delay_ms(2000);
     PORTD |= _BV(6);
     _delay_ms(40);

@@ -2,6 +2,7 @@
 #include <avr/io.h>
 #include <MotorController.h>
 #include <unity.h>
+#include <avr/interrupt.h>
 
 void pwm_ramp(){
     MotorController::setPWM(0);
@@ -24,6 +25,7 @@ void pwm_ramp(){
 int main(void){
     MotorController::init();
     MotorController::enable();
+    sei();
     _delay_ms(2000);
     UNITY_BEGIN();
     RUN_TEST(pwm_ramp);
