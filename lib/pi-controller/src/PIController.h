@@ -1,7 +1,9 @@
 #include <stdint.h>
 
-#ifndef _PI_CONTROLLER
-#define _PI_CONTROLLER
+#ifndef _PI_CONTROLLER_H
+#define _PI_CONTROLLER_H
+
+bool mul_no_overflow(int16_t a, int16_t b, int16_t* res);
 
 class PIController {
 private: 
@@ -10,7 +12,7 @@ private:
     void reset() volatile;
 
     uint8_t deci_K_p = 2; //7
-    uint8_t deci_K_i = 8; //27
+    uint8_t deci_K_i = 27; //27
 public: 
     int16_t error_integral = 0;
     PIController(uint16_t deci_freq);

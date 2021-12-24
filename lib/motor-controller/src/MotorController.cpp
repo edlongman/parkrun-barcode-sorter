@@ -26,7 +26,7 @@ static volatile PIController controller{control_frequency*10};
 // Internal PWM value access
 void _setPWM(uint8_t val){
     disable();
-    OCR2B = PWM_CALC(val);
+    OCR2B = 2*PWM_CALC(val);
     enable();
 }
 
@@ -44,9 +44,10 @@ ISR(TIMER2_OVF_vect){
         if(PI_control_active){
             int16_t motor_difference = new_motor_position - motor_position;
             int16_t speed;
-            __builtin_mul_overflow(motor_difference, (int16_t)control_frequency, &speed);
+            mul_no_overflow(motor_difference, (int16_t)control_frequency, &speed);
             raw_speed = speed;
             _setPWM(controller.stepControlEstimation(speed, error_observation, integral_observation));
+            error_observation = OCR2B;
         }
         motor_position = new_motor_position;
         PINB |= _BV(PIN7);

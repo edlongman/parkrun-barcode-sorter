@@ -16,6 +16,7 @@ int main(){
     WheelGauge::init();
     WheelGauge::enable();
     sei();
+    _delay_ms(2000);
     
     int16_t motorPosition=0;
     int16_t speed=0;
