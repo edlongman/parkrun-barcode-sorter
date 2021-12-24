@@ -16,7 +16,7 @@ public:
     PIController(uint16_t deci_freq);
     int16_t setSpeed(int16_t speed) volatile;
     int16_t getSetpoint() volatile;
-    uint8_t stepControlEstimation(int16_t current_speed, volatile int16_t &internal_observation) volatile;
+    uint8_t stepControlEstimation(int16_t current_speed, int16_t volatile &error_observer, int16_t volatile &integral_observer) volatile;
 };
 
 #endif /* _PI_CONTROLLER */

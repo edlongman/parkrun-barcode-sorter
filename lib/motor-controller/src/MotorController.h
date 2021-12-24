@@ -5,7 +5,7 @@
 
 namespace MotorController{
 
-extern int16_t volatile observation;
+extern int16_t volatile integral_observation;
 
 void init();
 void enable();
@@ -17,6 +17,8 @@ void setPWM(uint8_t val);
 int16_t setSpeed(int16_t val);
 int16_t getSetpoint();
 int16_t getSpeed();
+void waitForPIStep();
+void getPIStateVariables(int16_t& motorPosition, int16_t& speed, int16_t& error, int16_t& integral);
 
 }
 

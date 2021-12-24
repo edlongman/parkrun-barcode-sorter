@@ -57,7 +57,9 @@ void teardown(){
 }
 
 int16_t read(){
+    WheelGauge::disable();
     return motor_position;
+    WheelGauge::enable();
 }
 
 int16_t milliturnsDistance(int16_t prev, int16_t current){
