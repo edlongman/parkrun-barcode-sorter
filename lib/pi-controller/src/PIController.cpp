@@ -70,7 +70,7 @@ uint8_t PIController::stepControlEstimation(int16_t current_speed, int16_t volat
     integral_observer = unity_integral_effort;//*10/(int16_t)deci_freq
     //error_observer = error/10*(int16_t)deci_K_p;
     //error_observer = control_effort;
-    if(control_effort>INT8_MAX)return INT8_MAX;
+    if(control_effort>UINT8_MAX)return UINT8_MAX;
     else if(control_effort<0)return 0;
     return control_effort;
 }
