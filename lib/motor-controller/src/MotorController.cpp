@@ -6,9 +6,9 @@
 
 namespace MotorController{
 
-#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (float)(F_CPU)/PRESCALE/FREQ/2
+#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/2
 
-#define PWM_CALC(percentage) (uint16_t)(timer_top)*percentage/255
+#define PWM_CALC(percentage) (uint16_t)(timer_top)*percentage/UINT8_MAX;
 
 const uint16_t timer_frequency = 24000;
 const uint8_t control_frequency = 50;
@@ -56,11 +56,11 @@ ISR(TIMER2_OVF_vect){
 
 void init(){
     // Intialize Timer at 10% Duty cycle
-    // Fast PWM mode, count to OCR2A, clear OC2B at BOTTOM, set at Compare Match
+    // Phase correct PWM mode, count to OCR2A
     TCCR2A = _BV(WGM20) | _BV(WGM22) | _BV(COM2B1);
-    // prescaler /8
+    // prescaler /1
     TCCR2B = _BV(WGM22) | _BV(CS20);
-    // Count to 79 for 2.5kHz @ 12MHz F_CPU (80-1)
+    // Count to 250 for 24kHz
     OCR2A = timer_top;
     TIMSK2 = 0;
     OCR2B = PWM_CALC(default_pwm_pc);
