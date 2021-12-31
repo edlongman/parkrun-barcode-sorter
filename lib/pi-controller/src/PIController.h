@@ -3,8 +3,6 @@
 #ifndef _PI_CONTROLLER_H
 #define _PI_CONTROLLER_H
 
-bool mul_no_overflow(int16_t a, int16_t b, int16_t* res);
-
 class PIController {
 private: 
     uint16_t deci_freq = 50;

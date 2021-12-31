@@ -3,6 +3,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <PIController.h>
+#include <NoOverflow.h>
 
 namespace MotorController{
 
@@ -44,7 +45,7 @@ ISR(TIMER2_OVF_vect){
         if(PI_control_active){
             int16_t motor_difference = new_motor_position - motor_position;
             int16_t speed;
-            mul_no_overflow(motor_difference, (int16_t)control_frequency, &speed);
+            NoOverflow::mul(motor_difference, (int16_t)control_frequency, &speed);
             raw_speed = speed;
             _setPWM(controller.stepControlEstimation(speed, error_observation, integral_observation));
         }
