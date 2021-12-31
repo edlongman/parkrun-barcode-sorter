@@ -24,8 +24,12 @@ void quick_switch(){
     _delay_ms(150);
 }
 
-ISR(TIMER1_OVF_vect){
-    PINB |= _BV(PB7);
+void setpoint_control(){
+    using ServoController::State;
+    ServoController::enableStates();
+    while(ServoController::getState()!=State::collect){}
+    ServoController::setTarget(State::insert);
+    while(ServoController::getState()!=State::insert){}
 }
 
 int main(){
@@ -35,7 +39,10 @@ int main(){
     ServoController::enable();
     UNITY_BEGIN();
     RUN_TEST(quick_switch);
+    _delay_ms(2000);
+    RUN_TEST(setpoint_control);
     UNITY_END();
+    _delay_ms(2000);
     ServoController::disable();
     ServoController::setPWM(0);
 }
