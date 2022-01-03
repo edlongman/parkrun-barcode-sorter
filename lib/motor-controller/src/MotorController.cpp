@@ -50,7 +50,6 @@ ISR(TIMER2_OVF_vect){
             _setPWM(controller.stepControlEstimation(speed, error_observation, integral_observation));
         }
         motor_position = new_motor_position;
-        PINB |= _BV(PIN7);
     }
 }
 
@@ -66,7 +65,6 @@ void init(){
     TIMSK2 = 0;
     OCR2B = PWM_CALC(default_pwm_pc);
     DDRD |=  _BV(PIN6);
-    DDRB |= _BV(PIN7);
 }
 
 void enable(){
