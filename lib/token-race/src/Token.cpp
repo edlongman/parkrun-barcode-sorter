@@ -36,3 +36,7 @@ Token::Token(const int16_t initialPosition, const char* raw_input, const uint8_t
 int16_t Token::getDistance(int16_t current_position){
     return WheelGauge::milliturnsDistance(intial_position, current_position);
 }
+
+uint8_t Token::getOutput(){
+    return output;
+}

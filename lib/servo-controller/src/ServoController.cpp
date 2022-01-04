@@ -17,20 +17,21 @@ const uint16_t timer_top = TIMER_TOP(timer_frequency, prescaler);
 
 struct ServoPos{
     static const uint8_t increment = 1;
-    static const uint8_t min = 92;
-    static const uint8_t max = 104;
-    static const uint8_t dwellTime = 22; // half second at 44Hz
+    static const uint8_t min = 80;
+    static const uint8_t max = 110;
+    static const uint8_t insertDwellTime = 30; // half second at 44Hz
+    static const uint8_t collectDwellTime = 10;
 };
 
 volatile State stateTarget=State::collect;
 volatile State state = State::collect;
-ISR(TIMER1_OVF_vect){
+ISR(TIMER1_COMPB_vect){
     static uint8_t dwell_timer=0;
     static uint8_t servoPosition = 0;
     // Next State logic
     switch(state){
         case State::collect:
-            if(dwell_timer >= ServoPos::dwellTime
+            if(dwell_timer >= ServoPos::collectDwellTime
               && stateTarget == State::insert){
                 state = State::toInsert;
             }
@@ -42,7 +43,7 @@ ISR(TIMER1_OVF_vect){
             }
             break;
         case State::insert:
-            if(dwell_timer >= ServoPos::dwellTime
+            if(dwell_timer >= ServoPos::insertDwellTime
               && stateTarget == State::collect){
                 state = State::toCollect;
             }
@@ -78,6 +79,16 @@ ISR(TIMER1_OVF_vect){
             servoPosition = newPos;
             break;
     }
+
+    // Anti overheat code
+    if(state == State::collect && dwell_timer > ServoPos::collectDwellTime
+        || state == State::insert && dwell_timer > ServoPos::insertDwellTime/2){
+        disable();
+    }
+    else{
+        enable();
+    }
+
     setPWM(servoPosition);
 
 }
@@ -89,7 +100,7 @@ void init(){
     // Prescaler of 1024
     TCCR1B =  _BV(WGM12) | _BV(CS12);
 
-    OCR1B = ServoPos::min;
+    OCR1B = ServoPos::max;
 
     DDRD |= _BV(PD4);
 }
@@ -106,11 +117,11 @@ State getState(){
 }
 
 void enableStates(){
-    TIMSK1 |= _BV(TOIE1);
+    TIMSK1 |= _BV(OCIE1B);
 }
 
 void disableStates(){
-    TIMSK1 &= ~_BV(TOIE1);
+    TIMSK1 &= ~_BV(OCIE1B);
 }
 
 void disable(){
