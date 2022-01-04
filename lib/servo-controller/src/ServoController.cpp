@@ -27,7 +27,6 @@ volatile State state = State::collect;
 ISR(TIMER1_OVF_vect){
     static uint8_t dwell_timer=0;
     static uint8_t servoPosition = 0;
-    PINB |= _BV(PB7);
     // Next State logic
     switch(state){
         case State::collect:
@@ -90,11 +89,9 @@ void init(){
     // Prescaler of 1024
     TCCR1B =  _BV(WGM12) | _BV(CS12);
 
-    OCR1B = 0;
+    OCR1B = ServoPos::min;
 
     DDRD |= _BV(PD4);
-    PORTD &= ~_BV(PD4);
-    DDRB |= _BV(7);
 }
 
 void enable(){
