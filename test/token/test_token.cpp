@@ -1,17 +1,19 @@
 #include <util/delay.h>
 #include <unity.h>
 #include <Token.h>
+#include <WheelGauge.h>
 
 void test_decoding(){
     Token t1(0,"P0995",2,3);
-    TEST_ASSERT_EQUAL_INT16(995, t1.value);
+    TEST_ASSERT_EQUAL_UINT16(995, t1.value);
+
     //Invalid token should come back 0
     Token t2(0,"AAAAA",2,3);
-    TEST_ASSERT_EQUAL_INT16(0, t2.value);
+    TEST_ASSERT_EQUAL_UINT16(0, t2.value);
 
     //Must handle largest possible token
     Token t3(0,"P9999",2,3);
-    TEST_ASSERT_EQUAL_INT16(9999, t3.value);
+    TEST_ASSERT_EQUAL_UINT16(9999, t3.value);
 }
 
 void test_output_bins(){
@@ -51,10 +53,19 @@ void test_output_bins(){
     TEST_ASSERT_EQUAL_INT8(6, t6c.output);
 }
 
+void test_distance_calc(){
+    Token t1(32300, "P0010", 3, 0);
+    // Check distance calculation works (across overflow)
+    // Travelled 1200 counts
+    int16_t expectedDistance = WheelGauge::milliturnsDistance(0, 1200);
+    TEST_ASSERT_EQUAL_INT16(expectedDistance, t1.getDistance(-32036));
+}
+
 int main(){
     _delay_ms(2000);
     UNITY_BEGIN();
     RUN_TEST(test_decoding);
     RUN_TEST(test_output_bins);
+    RUN_TEST(test_distance_calc);
     UNITY_END();
 }
