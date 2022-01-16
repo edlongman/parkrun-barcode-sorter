@@ -6,21 +6,21 @@
 
 namespace Scanner{
 
-const uint8_t nResetPin = 0;
 const uint8_t triggerPin = 1;
 
-void init(){
-    PORTC |= _BV(nResetPin) | _BV(triggerPin); // Enable Reset Pull-up and set trigger to default high
-    DDRC |= _BV(triggerPin); 
-}
+const uint16_t baud = 57600;
 
-void startScan(){
+void init();
+void enable();
+void disable();
+inline void startScan(){
     PORTC &= ~_BV(triggerPin);
 }
-
-void endScan(){
+inline void endScan(){
     PORTC |= _BV(triggerPin);
 }
+void scanLine(char* buffer, uint8_t length);
+bool isScanComplete();
 
 }
 

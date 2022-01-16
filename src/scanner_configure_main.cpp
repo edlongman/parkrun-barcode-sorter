@@ -1,12 +1,29 @@
+#include <ConsoleUart.h>
 #include <Scanner.h>
+#include <avr/interrupt.h>
+
+const uint8_t max_read = 8;
+char token_read[max_read] = {0};
 
 int main(){
+    sei();
     Scanner::init();
-
+    ConsoleUart::init();
+    Scanner::enable();
+    ConsoleUart::enable();
     while(1){
+        Scanner::scanLine(token_read, max_read);
         Scanner::startScan();
-        _delay_ms(1000);
+        for(uint16_t i=0;i<1000;i++){
+            _delay_ms(1);
+            if(Scanner::isScanComplete()){
+                break;
+            }
+        }
         Scanner::endScan();
+        if(Scanner::isScanComplete()){
+            ConsoleUart::blockingSendLine(token_read, max_read);
+        }
         _delay_ms(500);
     }
 }
