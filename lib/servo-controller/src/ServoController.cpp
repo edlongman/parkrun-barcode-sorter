@@ -97,9 +97,11 @@ ISR(TIMER1_COMPB_vect){
         DDRD |= _BV(4);
         setPWM(servoPosition);
     }
+}
 
-    
-
+volatile uint8_t time;
+ISR(TIMER1_OVF_vect){
+    time++;
 }
 
 void init(){
@@ -112,6 +114,7 @@ void init(){
     OCR1A = TIMER_TOP(40, prescaler);
     OCR1B = 0;
 
+    TIMSK1 |= _BV(TOIE1);
 }
 
 void enable(){
@@ -154,6 +157,33 @@ void setPWM(uint16_t val){
     cli();
     OCR1B = val;
     SREG = sreg;
+}
+
+Timer::Timer(uint16_t milliseconds_duration){
+    restart();
+    // Calculate how mny time counts to wait for. 
+    // Avg wait for first count is 1000ms/2/timer_frequency
+    // So no need to account for quantization
+    expiry_counts = milliseconds_duration/(1000/timer_frequency);
+    if(expiry_counts>255)expiry_counts = 255;
+    if(expiry_counts == 0)expiry_counts = 1;
+}
+
+bool Timer::isExpired(){
+    const uint8_t difference = time - start;
+    if(last_check > difference){
+        // New difference should always grow
+        // so we missed a check and it overflowed
+        last_check = UINT8_MAX;
+        return true;
+    }
+    last_check = difference;
+    return last_check >= expiry_counts || last_check >= UINT8_MAX;
+}
+
+void Timer::restart(){
+    start = time;
+    last_check = 0;
 }
 
 }

@@ -22,6 +22,20 @@ State getState();
 void enableStates();
 void disableStates();
 
+// Servo controller used as coarse system timer
+class Timer{
+    private:
+    uint16_t expiry_counts;
+    uint8_t start;
+    uint8_t last_check;
+    public:
+    // Create timer with min time of 1/servo_freq and max of timer period = 6.4s
+    Timer(uint16_t duration_ms);
+    // Latching check if timer has expired. Must be called twice in max timer period to be valid
+    bool isExpired();
+    void restart();
+};
+
 }
 
 #endif /* _SERVO_CONTROLLER_H */
