@@ -11,6 +11,7 @@ private:
 
     uint8_t deci_K_p = 2; //7
     uint8_t deci_K_i = 27; //27
+    uint8_t alarm = 0;
 public: 
     int16_t error_integral = 0;
     PIController(uint16_t deci_freq);

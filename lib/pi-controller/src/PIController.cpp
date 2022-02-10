@@ -29,7 +29,10 @@ uint8_t PIController::stepControlEstimation(int16_t current_speed, int16_t volat
     int16_t new_integral;
     NoOverflow::add(error_integral, error, &new_integral);
 
-    error_integral = new_integral;
+    const uint8_t effort_ceiling = 2;
+    if( alarm <= effort_ceiling ){
+        error_integral = new_integral;
+    }
     integral_observer = error_integral;
     error_observer = error;
     int16_t unity_integral_effort;
@@ -39,10 +42,21 @@ uint8_t PIController::stepControlEstimation(int16_t current_speed, int16_t volat
     int16_t control_effort = 0;
     // Multiply by 10 to counteract previous divide
     NoOverflow::add(unity_integral_effort/(int16_t)deci_freq*10, error/10*(int16_t)deci_K_p, &control_effort);
-    integral_observer = unity_integral_effort;//*10/(int16_t)deci_freq
-    //error_observer = error/10*(int16_t)deci_K_p;
-    //error_observer = control_effort;
-    if(control_effort>UINT8_MAX)return UINT8_MAX;
-    else if(control_effort<0)return 0;
+    integral_observer = unity_integral_effort;
+    
+    // If max or min control effort, then put into alarm mode
+    if(control_effort>UINT8_MAX){
+        if(alarm<UINT8_MAX)
+            alarm++;
+        return UINT8_MAX;
+    }
+    else if(control_effort<0){
+        if(setpoint>0)alarm++;
+        return 0;
+    }
+    // Cooldown after alarm for short time
+    const uint8_t cooldown_cycles = 1;
+    if(alarm>cooldown_cycles)alarm=cooldown_cycles;
+    else if(alarm>0)alarm--;
     return control_effort;
 }
