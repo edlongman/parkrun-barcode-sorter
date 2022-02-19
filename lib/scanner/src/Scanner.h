@@ -6,7 +6,7 @@
 
 namespace Scanner{
 
-const uint8_t triggerPin = 1;
+const uint8_t triggerPin = 6;
 
 const uint16_t baud = 57600;
 

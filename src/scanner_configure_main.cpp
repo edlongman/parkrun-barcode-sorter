@@ -1,5 +1,7 @@
 #include <ConsoleUart.h>
 #include <Scanner.h>
+#include <FlapGovenor.h>
+#include <MotorController.h>
 #include <avr/interrupt.h>
 
 const uint8_t max_read = 8;
@@ -9,8 +11,15 @@ int main(){
     sei();
     Scanner::init();
     ConsoleUart::init();
+    FlapGovenor::init();
     Scanner::enable();
     ConsoleUart::enable();
+    FlapGovenor::enable();
+    MotorController::init();
+    MotorController::enable();
+    // Enable drivers and scanner
+    DDRC |= _BV(PC7);
+    PORTC |= _BV(PC7);
     while(1){
         Scanner::scanLine(token_read, max_read);
         Scanner::startScan();

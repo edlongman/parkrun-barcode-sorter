@@ -21,11 +21,12 @@ int main(){
     ConsoleUart::enable();
     WheelGauge::init();
     WheelGauge::enable();
-    MotorController::setSpeed(350);
+    MotorController::setSpeed(100);
     uint32_t loop_counter = 0; 
     bool insert_token_active = false;
-    DDRB |= _BV(PB7);
-    PORTB &= ~_BV(PB7);
+    // Enable drivers and scanner
+    DDRC |= _BV(PC7);
+    PORTC |= _BV(PC7);
     while(1){
         if(insert_token_active == false){
             loop_counter++;
