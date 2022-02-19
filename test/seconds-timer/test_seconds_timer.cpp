@@ -42,6 +42,10 @@ void test_very_large_time(){
     TEST_ASSERT_TRUE_MESSAGE(test.isExpired(), "Timer didn't stay stopped");
 }
 
+void test_restart(){
+    TEST_ASSERT_TRUE_MESSAGE(false, "Unimplemented restart test");
+}
+
 int main(){
     ServoController::init();
     sei();
@@ -50,6 +54,7 @@ int main(){
     RUN_TEST(test_duration);
     RUN_TEST(test_small_times);
     RUN_TEST(test_very_large_time);
+    RUN_TEST(test_restart);
     UNITY_END();
     while(1);
 }

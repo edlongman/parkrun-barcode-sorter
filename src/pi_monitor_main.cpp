@@ -22,10 +22,10 @@ int main(){
     sprintf(ostream, " --- Start --- \r\n");
     ConsoleUart::blockingSendLine(ostream, buff_size);
     
-    int16_t motorPosition=0;
-    int16_t speed=0;
-    int16_t integral=0;
-    int16_t error=0;
+    int16_t motorPosition=0; // Raw encoder counts of motor
+    int16_t speed=0; // Encoder counts per second
+    int16_t integral=0; // Scaled down integral recording
+    int16_t error=0; // Raw error in reading
     MotorController::setSpeed(300);
     for(uint8_t i=0;i<50*4;i++){
         MotorController::getPIStateVariables(motorPosition, speed, error, integral);
