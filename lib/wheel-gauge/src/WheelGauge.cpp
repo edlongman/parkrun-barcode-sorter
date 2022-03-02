@@ -13,19 +13,7 @@ volatile uint8_t encoder_state = 0;
 // Very quick, only recording original pulses with no processing
 ISR(PCINT3_vect){
     encoder_state = ((encoder_state & _BV(5)) >> 1) | (PIND & _BV(5));
-    switch(encoder_state >> 4){
-        case 0b0010:
-            motor_position++;
-            motor_position++;
-            break;
-        case 0b0001:
-            motor_position++;
-            motor_position++;
-            break;
-        default:
-            //nothing
-            break;
-    }
+    motor_position++;
 }
 
 void init(){
@@ -58,11 +46,11 @@ int16_t read(){
 }
 
 int16_t milliturnsDistance(int16_t prev, int16_t current){
-    return (int32_t)(current-prev)*1000/gearing/motor_counts_per_rev;
+    return (int32_t)(current-prev)*1000*gearing_denom/gearing_num/motor_counts_per_rev;
 }
 
 int16_t rawFromMilliturns(int16_t milliturns){
-    return (int32_t)milliturns*gearing*motor_counts_per_rev/1000;
+    return (int32_t)milliturns*gearing_num/gearing_denom*motor_counts_per_rev/1000;
 }
 
 uint8_t encoderState(){

@@ -10,7 +10,7 @@ void test_encoder_output(){
     for(uint8_t i=0;i<200;i++){
         int16_t new_position = WheelGauge::read();
         if(new_position == prev_position){
-            _delay_us(2000);
+            _delay_us(2500);
         }
         else{
             int16_t difference = new_position-prev_position;
@@ -18,6 +18,7 @@ void test_encoder_output(){
             TEST_ASSERT_INT_WITHIN_MESSAGE(1, 3 , difference, "Encoder output not correct magnitude");
             UnityPrint("In 100us, Encoder moved approximately ");
             UnityPrintNumber(difference);
+            UNITY_OUTPUT_CHAR('\n');
             prev_position = new_position;
             break;
         }
@@ -27,16 +28,28 @@ void test_encoder_output(){
 }
 
 int main(void){
+    #ifdef FIT0441_DRIVE
+    PORTD |= _BV(6);
+    #endif
     DDRD |= _BV(6);
     WheelGauge::init();
     WheelGauge::enable();
     sei();
     _delay_ms(2000);
-    PORTD |= _BV(6);
+    #ifdef FIT0441_DRIVE
+        PORTD &= ~_BV(6);
+    #else
+        PORTD |= _BV(6);
+    #endif
     _delay_ms(40);
     UNITY_BEGIN();
     RUN_TEST(test_encoder_output);
     UNITY_END();
     PORTD &= ~_BV(6);
+    #ifdef FIT0441_DRIVE
+        PORTD |= _BV(6);
+    #else
+        PORTD &= ~_BV(6);
+    #endif
     while(1);
 }
