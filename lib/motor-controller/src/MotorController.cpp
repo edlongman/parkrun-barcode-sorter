@@ -13,7 +13,7 @@ namespace MotorController{
 
 const uint16_t timer_frequency = 24000;
 const uint8_t control_frequency = 50;
-const uint8_t default_pwm_pc = 10;
+const uint8_t default_pwm_level = 0;
 const uint8_t prescaler = 1;
 const uint8_t timer_top = PHASE_CORRECT_TOP(timer_frequency, prescaler);
 
@@ -26,6 +26,11 @@ static volatile PIController controller{control_frequency*10};
 
 // Internal PWM value access
 void _setPWM(uint8_t val){
+    if(val<40&&val>0){
+        // Prevent motor stall prevention 
+        // kicking in at very low torque
+        val = 0;
+    }
     disable();
     OCR2B = PWM_CALC(val);
     enable();
@@ -58,12 +63,15 @@ void init(){
     // Intialize Timer at 10% Duty cycle
     // Phase correct PWM mode, count to OCR2A
     TCCR2A = _BV(WGM20) | _BV(WGM22) | _BV(COM2B1);
+    #ifdef FIT0441_DRIVE
+        TCCR2A |= _BV(COM2B0);// Invert PWM Output
+    #endif
     // prescaler /1
     TCCR2B = _BV(WGM22) | _BV(CS20);
     // Count to 250 for 24kHz
     OCR2A = timer_top;
     TIMSK2 = 0;
-    OCR2B = PWM_CALC(default_pwm_pc);
+    OCR2B = PWM_CALC(default_pwm_level);
     DDRD |=  _BV(PIN6);
 }
 

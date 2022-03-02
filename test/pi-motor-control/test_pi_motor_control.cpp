@@ -8,11 +8,15 @@
 void pi_setpoints(){
     int16_t raw_distance = WheelGauge::read();
     int16_t error_integral = MotorController::setSpeed(300);
-    //TEST_ASSERT_INT_WITHIN(5, -637, error_integral);
-    TEST_ASSERT_INT_WITHIN(6, 1008, MotorController::getSetpoint());
+    #ifdef FIT0441_DRIVE
+    const int target = 864;
+    #else
+    const int target = 1008;
+    #endif
+    TEST_ASSERT_INT_WITHIN(6, target, MotorController::getSetpoint());
     _delay_ms(500);
     int16_t raw_distance1 = WheelGauge::read();
-    TEST_ASSERT_INT_WITHIN(50, 1008, MotorController::getSpeed());
+    TEST_ASSERT_INT_WITHIN(50, target, MotorController::getSpeed());
     MotorController::setSpeed(250);
     _delay_ms(1000);
     int16_t raw_distance2 = WheelGauge::read();
@@ -26,7 +30,7 @@ void pi_setpoints(){
 }
 
 void wheel_gauge_wraparound(){
-    MotorController::setSpeed(450);
+    MotorController::setSpeed(250);
     while(WheelGauge::read() < INT16_MAX/100*98){
         _delay_ms(1);
     }
