@@ -21,32 +21,36 @@ int main(){
     ConsoleUart::enable();
     WheelGauge::init();
     WheelGauge::enable();
-    MotorController::setSpeed(100);
+    MotorController::setSpeed(200);
     uint32_t loop_counter = 0; 
     bool insert_token_active = false;
     // Enable drivers and scanner
     DDRC |= _BV(PC7);
     PORTC |= _BV(PC7);
     while(1){
+        // Simple loop counting wait for 10000 loops between inserting tokens
         if(insert_token_active == false){
             loop_counter++;
-            //PORTB |= _BV(PB7);
             if(loop_counter>10000L){
+                // Exit wait and insert token with token feed
                 insert_token_active = true;
                 loop_counter = 0;
                 ServoController::setTarget(ServoController::State::insert);
             }
         }
         else{
-            //PORTB &= ~_BV(PB7);
             loop_counter++;
+            // Wait until token feed reached insert position
             if(ServoController::getState() == ServoController::State::insert){
                 insert_token_active = false;
                 loop_counter = 0;
+                // Add mock token to token race and return feed to collection mode
                 TokenRace::insertToken("P0010");
                 ServoController::setTarget(ServoController::State::collect);
             }
         }
+
+        // Flap control module
         for(uint8_t i=0;i<3;i++){
             if(TokenRace::checkFlapOutput(i, WheelGauge::read())){
                 FlapGovenor::setOn(i);
@@ -55,6 +59,8 @@ int main(){
                 FlapGovenor::setOff(i);
             }
         }
+
+        // Token race cleanup
         TokenRace::popExpiredTokens(WheelGauge::read());
     }
 }
