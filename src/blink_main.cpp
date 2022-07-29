@@ -7,9 +7,12 @@
 #error "Unsupported STM32 Family"
 #endif
 
+#include "system_clock_setup.h"
+
 #define Board_LED_Pin                                GPIO_PIN_13
 #define Board_LED_GPIO_Port                          GPIOC
 #define LED_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOC_CLK_ENABLE()
+
 
 int main(void)
 {
@@ -17,7 +20,7 @@ int main(void)
   HAL_Init();
 
   /* Configure the system clock */
-  //SystemClock_Config();
+  SystemClock_Config();
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -39,10 +42,4 @@ int main(void)
     HAL_GPIO_TogglePin(Board_LED_GPIO_Port, Board_LED_Pin);
     HAL_Delay(200);
   }
-}
-
-
-extern "C" void SysTick_Handler(void)
-{
-  HAL_IncTick();
 }
