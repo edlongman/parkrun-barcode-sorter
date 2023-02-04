@@ -154,7 +154,7 @@ static const char *usb_strings[] = {
 
 /* Buffer to be used for control requests. */
 uint8_t usbd_control_buffer[128];
-
+bool usb_setup = false;
 static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_dev, struct usb_setup_data *req, uint8_t **buf,
 		uint16_t *len, void (**complete)(usbd_device *usbd_dev, struct usb_setup_data *req))
 {
@@ -192,6 +192,7 @@ static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_d
 			return USBD_REQ_NOTSUPP;
 		return USBD_REQ_HANDLED;
 	}
+	usb_setup = true;
 	return USBD_REQ_NOTSUPP;
 }
 
@@ -202,6 +203,10 @@ static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 
 	char buf[64];
 	int len = usbd_ep_read_packet(usbd_dev, 0x01, buf, 64);
+	
+	for(int i=0; i<len;i++){
+		buf[i]++;
+	}
 
 	if (len) {
 		usbd_ep_write_packet(usbd_dev, 0x82, buf, len);
@@ -249,6 +254,9 @@ int main(void)
 	gpio_clear(GPIOC, Board_LED_Pin);
 
 	i = 0;
+	int j =0;
+	char count_str[10] = "Count:0";
+	uint8_t status_buf[2] = {0};
 	while (1){
 		if(i==0x00){
 			gpio_clear(GPIOC, Board_LED_Pin);
@@ -256,6 +264,10 @@ int main(void)
 		usbd_poll(usbd_dev);
 		if(i==50000){
 			gpio_set(GPIOC, Board_LED_Pin);
+			count_str[6]=j++%10+48;
+			if(usb_setup == true){
+				usbd_ep_write_packet(usbd_dev, 0x82, count_str, 7);
+			}
 		}
 		i++;
 		if(i>1000000)i=0;
