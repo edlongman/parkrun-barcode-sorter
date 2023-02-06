@@ -229,6 +229,14 @@ static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
 				cdcacm_control_request);
 }
 
+static void cdcacm_suspend(){
+	usb_setup = false;
+}
+
+static void cdcacm_resume(){
+	usb_setup = true;
+}
+
 int main(void)
 {
 	unsigned int i;
@@ -245,6 +253,8 @@ int main(void)
 
 	usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
 	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
+	usbd_register_suspend_callback(usbd_dev, cdcacm_suspend);
+	usbd_register_resume_callback(usbd_dev, cdcacm_resume);
 	if(7 > *(usb_strings[0])){
 		gpio_clear(GPIOC, Board_LED_Pin);
 	}
@@ -263,9 +273,9 @@ int main(void)
 		}
 		usbd_poll(usbd_dev);
 		if(i==50000){
-			gpio_set(GPIOC, Board_LED_Pin);
 			count_str[6]=j++%10+48;
 			if(usb_setup == true){
+				gpio_set(GPIOC, Board_LED_Pin);
 				usbd_ep_write_packet(usbd_dev, 0x82, count_str, 7);
 			}
 		}
