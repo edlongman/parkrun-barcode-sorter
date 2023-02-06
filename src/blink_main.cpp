@@ -174,17 +174,17 @@ static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_d
 			char buf[10];
 			struct usb_cdc_notification cdc;
 		};
-		// char_cdc_union notif;
+		char_cdc_union notif;
 
 		// /* We echo signals back to host as notification. */
-		// notif.cdc.bmRequestType = 0xA1;
-		// notif.cdc.bNotification = USB_CDC_NOTIFY_SERIAL_STATE;
-		// notif.cdc.wValue = 0;
-		// notif.cdc.wIndex = 0;
-		// notif.cdc.wLength = 2;
-		// notif.buf[8] = req->wValue & 3;
-		// notif.buf[9] = 0;
-		// usbd_ep_write_packet(0x83, buf, 10);
+		notif.cdc.bmRequestType = 0xA1;
+		notif.cdc.bNotification = USB_CDC_NOTIFY_SERIAL_STATE;
+		notif.cdc.wValue = 0;
+		notif.cdc.wIndex = 0;
+		notif.cdc.wLength = 2;
+		notif.buf[8] = req->wValue & 3;
+		notif.buf[9] = 0;
+		usbd_ep_write_packet(usbd_dev, 0x83, buf, 10);
 		return USBD_REQ_HANDLED;
 		}
 	case USB_CDC_REQ_SET_LINE_CODING:
@@ -272,12 +272,12 @@ int main(void)
 			gpio_clear(GPIOC, Board_LED_Pin);
 		}
 		usbd_poll(usbd_dev);
-		if(i==50000){
-			count_str[6]=j++%10+48;
-			if(usb_setup == true){
-				gpio_set(GPIOC, Board_LED_Pin);
-				usbd_ep_write_packet(usbd_dev, 0x82, count_str, 7);
-			}
+		if(i==20000 && usb_setup == true){
+			gpio_set(GPIOC, Board_LED_Pin);
+			usbd_ep_write_packet(usbd_dev, 0x82, count_str, 7);
+		}
+		if(i==80000){
+			gpio_set(GPIOC, Board_LED_Pin);
 		}
 		i++;
 		if(i>1000000)i=0;
