@@ -3,16 +3,26 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/usb/usbd.h>
 #include <libopencm3/usb/cdc.h>
+#include <libopencm3/stm32/timer.h>
+#include <libopencm3/cm3/nvic.h>
 #include <UsbSerial.h>
 
 #define Board_LED_Pin                                GPIO13
 #define Board_LED_GPIO_Port                          GPIOC
 #define LED_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOC_CLK_ENABLE()
 
+void tim2_isr(){
+	gpio_toggle(Board_LED_GPIO_Port, Board_LED_Pin);
+	timer_clear_flag(TIM2, TIM_SR_UIF);
+}
+
 int main(void)
 {
 	unsigned int i;
 
+	/* Without this the timer interrupt routine will never be called. */
+	nvic_enable_irq(NVIC_TIM2_IRQ);
+	nvic_set_priority(NVIC_TIM2_IRQ, 1);
 	NULL;
 	rcc_clock_setup_in_hse_8mhz_out_72mhz();
 
@@ -22,6 +32,15 @@ int main(void)
 	gpio_set_mode(Board_LED_GPIO_Port, GPIO_MODE_OUTPUT_2_MHZ,
 		      GPIO_CNF_OUTPUT_PUSHPULL, Board_LED_Pin);
 
+	rcc_periph_clock_enable(RCC_TIM2);
+	timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
+				TIM_CR1_DIR_UP);
+	timer_set_prescaler(TIM2, 40);
+
+	//timer_set_oc_value(TIM2, TIM_OC1, 1000);
+	timer_set_period(TIM2, 6000);
+	timer_enable_counter(TIM2);
+	timer_enable_irq(TIM2, TIM_DIER_UIE);
 
 
 	usbd_device* usbd_dev{UsbSerial::init()};
@@ -32,15 +51,15 @@ int main(void)
 	uint8_t status_buf[2] = {0};
 	while (1){
 		if(i==0x00){
-			gpio_clear(GPIOC, Board_LED_Pin);
+			//gpio_clear(GPIOC, Board_LED_Pin);
 		}
 		UsbSerial::poll();
 		if(i==20000 && UsbSerial::isConnected() == true){
-			gpio_set(GPIOC, Board_LED_Pin);
+			// gpio_set(GPIOC, Board_LED_Pin);
 			UsbSerial::writeString(count_str, 7);
 		}
 		if(i==80000){
-			gpio_set(GPIOC, Board_LED_Pin);
+			// gpio_set(GPIOC, Board_LED_Pin);
 		}
 		i++;
 		if(i>1000000)i=0;
