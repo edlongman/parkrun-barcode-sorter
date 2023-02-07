@@ -27,17 +27,17 @@ int main(void)
 	usbd_device* usbd_dev{UsbSerial::init()};
 
 	i = 0;
-	int j =0;
+	int j =  0;
 	char count_str[10] = "Count:0";
 	uint8_t status_buf[2] = {0};
 	while (1){
 		if(i==0x00){
 			gpio_clear(GPIOC, Board_LED_Pin);
 		}
-		usbd_poll(usbd_dev);
+		UsbSerial::poll();
 		if(i==20000 && UsbSerial::isConnected() == true){
 			gpio_set(GPIOC, Board_LED_Pin);
-			usbd_ep_write_packet(usbd_dev, 0x82, count_str, 7);
+			UsbSerial::writeString(count_str, 7);
 		}
 		if(i==80000){
 			gpio_set(GPIOC, Board_LED_Pin);

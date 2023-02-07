@@ -7,7 +7,6 @@
 
 namespace UsbSerial{
 
-
 usbd_device *usbd_dev;
 
 /* Buffer to be used for control requests. */
@@ -96,6 +95,7 @@ static void cdcacm_resume(){
 }
 
 usbd_device* init(){
+
 	usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
 	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
 	usbd_register_suspend_callback(usbd_dev, cdcacm_suspend);
@@ -112,6 +112,18 @@ usbd_device* init(){
 
 bool isConnected(){
     return usb_setup;
+}
+
+void poll(){
+	usbd_poll(usbd_dev);
+}
+
+bool writeString(const char* string, uint16_t len){
+    if(isConnected() || len<64){
+        usbd_ep_write_packet(usbd_dev, 0x82, string, len);
+        return true;
+    }
+    return false;
 }
 
 }
