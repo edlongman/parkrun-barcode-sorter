@@ -12,8 +12,14 @@
 #define LED_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOC_CLK_ENABLE()
 
 void tim2_isr(){
-	gpio_toggle(Board_LED_GPIO_Port, Board_LED_Pin);
-	timer_clear_flag(TIM2, TIM_SR_UIF);
+	if(timer_get_flag(TIM2, TIM_SR_CC1IF)){
+		gpio_set(Board_LED_GPIO_Port, Board_LED_Pin);
+		timer_clear_flag(TIM2, TIM_SR_CC1IF);
+	}
+	if(timer_get_flag(TIM2, TIM_SR_UIF)){
+		gpio_clear(Board_LED_GPIO_Port, Board_LED_Pin);
+		timer_clear_flag(TIM2, TIM_SR_UIF);
+	}
 }
 
 int main(void)
@@ -35,11 +41,12 @@ int main(void)
 	rcc_periph_clock_enable(RCC_TIM2);
 	timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
 				TIM_CR1_DIR_UP);
-	timer_set_prescaler(TIM2, 40);
+	timer_set_prescaler(TIM2, 4000);
 
-	//timer_set_oc_value(TIM2, TIM_OC1, 1000);
+	timer_set_oc_value(TIM2, TIM_OC1, 2000);
 	timer_set_period(TIM2, 6000);
 	timer_enable_counter(TIM2);
+	timer_enable_irq(TIM2, TIM_DIER_CC1IE);
 	timer_enable_irq(TIM2, TIM_DIER_UIE);
 
 
@@ -57,9 +64,18 @@ int main(void)
 		if(i==20000 && UsbSerial::isConnected() == true){
 			// gpio_set(GPIOC, Board_LED_Pin);
 			UsbSerial::writeString(count_str, 7);
+
+		}
+		if(UsbSerial::isConnected() == true){
+			timer_set_oc_value(TIM2, TIM_OC1, 2000);
+			timer_set_period(TIM2, 6000);
+		}
+		else{
+			timer_set_oc_value(TIM2, TIM_OC1, 14000);
+			timer_set_period(TIM2, 16000);
 		}
 		if(i==80000){
-			// gpio_set(GPIOC, Board_LED_Pin);
+			//gpio_set(GPIOC, Board_LED_Pin);
 		}
 		i++;
 		if(i>1000000)i=0;
