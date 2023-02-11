@@ -41,10 +41,11 @@ int main(void)
 	rcc_periph_clock_enable(RCC_TIM2);
 	timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
 				TIM_CR1_DIR_UP);
-	timer_set_prescaler(TIM2, 4000);
+	timer_set_prescaler(TIM2, 4000); // Timer peripheral clock 24MHz
 
 	timer_set_oc_value(TIM2, TIM_OC1, 2000);
 	timer_set_period(TIM2, 6000);
+	// Timer period 1s 1s
 	timer_enable_counter(TIM2);
 	timer_enable_irq(TIM2, TIM_DIER_CC1IE);
 	timer_enable_irq(TIM2, TIM_DIER_UIE);
@@ -69,10 +70,12 @@ int main(void)
 		if(UsbSerial::isConnected() == true){
 			timer_set_oc_value(TIM2, TIM_OC1, 2000);
 			timer_set_period(TIM2, 6000);
+			// Timer period is 1s
 		}
 		else{
-			timer_set_oc_value(TIM2, TIM_OC1, 14000);
-			timer_set_period(TIM2, 16000);
+			timer_set_oc_value(TIM2, TIM_OC1, 11000);
+			timer_set_period(TIM2, 12000);
+			// Timer period is 2s
 		}
 		if(i==80000){
 			//gpio_set(GPIOC, Board_LED_Pin);
