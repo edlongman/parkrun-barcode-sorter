@@ -1,21 +1,23 @@
 #include "MotorController.h"
 #include <WheelGauge.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/timer.h>
 #include <PIController.h>
 #include <NoOverflow.h>
 
 namespace MotorController{
 
-#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/2
+#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/6
 
-#define PWM_CALC(percentage) (uint16_t)(timer_top)*percentage/UINT8_MAX;
+#define PWM_CALC(percentage) (uint32_t)(timer_top)*percentage/UINT8_MAX
 
 const uint16_t timer_frequency = 24000;
 const uint8_t control_frequency = 50;
 const uint8_t default_pwm_level = 0;
 const uint8_t prescaler = 1;
-const uint8_t timer_top = PHASE_CORRECT_TOP(timer_frequency, prescaler);
+const uint16_t timer_top = PHASE_CORRECT_TOP(timer_frequency, prescaler);
 
 static int16_t volatile raw_speed = 0;
 
@@ -24,15 +26,16 @@ static int16_t volatile raw_speed = 0;
 static volatile bool PI_control_active = 0;
 static volatile PIController controller{control_frequency*10};
 
-// Internal PWM value access
+// Internal PWM value access in per 256
 void _setPWM(uint8_t val){
     if(val<40&&val>0){
-        // Prevent motor stall prevention 
+        // Motor stall prevention 
         // kicking in at very low torque
-        val = 0;
+        //val = 0;
     }
     disable();
-    OCR2B = PWM_CALC(val);
+    //timer_set_counter(TIM1, PWM_CALC(val) );
+    timer_set_oc_value(TIM1, TIM_OC1, val);
     enable();
 }
 
@@ -42,7 +45,9 @@ int16_t volatile error_observation = 0;
 static int16_t motor_position = 0;
 static uint16_t volatile interrupt_prescaler = 0;
 // Motor Controller interrupt with downscaled control check
-ISR(TIMER2_OVF_vect){
+void tim1_isr(){
+    timer_clear_flag(TIM1, TIM_SR_UIF);
+
     const uint16_t interrupt_count_top = timer_frequency/control_frequency;
     if(++interrupt_prescaler >= interrupt_count_top){
         interrupt_prescaler = 0;
@@ -60,32 +65,44 @@ ISR(TIMER2_OVF_vect){
 
 
 void init(){
+	nvic_enable_irq(NVIC_TIM1_UP_IRQ);
+	nvic_set_priority(NVIC_TIM1_UP_IRQ, 127);
+
     // Intialize Timer at 10% Duty cycle
     // Phase correct PWM mode, count to OCR2A
-    TCCR2A = _BV(WGM20) | _BV(WGM22) | _BV(COM2B1);
+	rcc_periph_clock_enable(RCC_TIM1);
+    rcc_periph_clock_enable(RCC_AFIO);
+	timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
+				TIM_CR1_DIR_UP);
+    timer_enable_oc_output(TIM1, TIM_OC1);
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO8);
+    timer_set_oc_polarity_low(TIM1, TIM_OC1);
     #ifdef FIT0441_DRIVE
-        TCCR2A |= _BV(COM2B0);// Invert PWM Output
+        timer_set_oc_polarity_high(TIM1, TIM_OC1);
     #endif
     // prescaler /1
-    TCCR2B = _BV(WGM22) | _BV(CS20);
-    // Count to 250 for 24kHz
-    OCR2A = timer_top;
-    TIMSK2 = 0;
-    OCR2B = PWM_CALC(default_pwm_level);
-    DDRD |=  _BV(PIN6);
+	timer_set_prescaler(TIM1, 1); // Timer peripheral clock 24MHz
+    // Count to 500 for 24kHx
+	timer_set_period(TIM1, timer_top);
+    timer_clear_flag(TIM1, TIM_SR_UIF);
+    timer_set_oc_value(TIM1, TIM_OC1, PWM_CALC(default_pwm_level));
 }
 
 void enable(){
-    TIMSK2 |= _BV(TOIE2);
+    timer_enable_irq(TIM1, TIM_DIER_UIE);
 }
 
 void disable(){
-    TIMSK2 &= ~_BV(TOIE2);
+    timer_disable_irq(TIM1, TIM_DIER_UIE);
 }
 
 void setPWM(uint8_t val){
     PI_control_active = 0;
     _setPWM(val);
+}
+
+uint8_t getPWM(){
+    return TIM_CCR1(TIM1);///timer_top*100;
 }
 
 int16_t setSpeed(int16_t milliturns_per_sec){

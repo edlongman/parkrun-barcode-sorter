@@ -1,42 +1,42 @@
 #include "WheelGauge.h"
-#include <avr/io.h>
-#include <avr/interrupt.h>
+//#include <avr/io.h>
+//#include <avr/interrupt.h>
 
 namespace WheelGauge{
 
-const uint8_t channel_mask = _BV(PD7) | _BV(PD5);
+const uint8_t channel_mask = 0;//_BV(PD7) | _BV(PD5);
 
 volatile int16_t motor_position = 0; // in edge counts
 volatile uint8_t encoder_state = 0;
 
 // Switch derived from encoder logic state table
 // Very quick, only recording original pulses with no processing
-ISR(PCINT3_vect){
+/*ISR(PCINT3_vect){
     encoder_state = ((encoder_state & _BV(5)) >> 1) | (PIND & _BV(5));
     motor_position++;
-}
+}*/
 
 void init(){
     // set pins 5 and 7 as inputs with pull-ups
-    DDRD &= ~channel_mask;
-    PORTD |= channel_mask;
-    // Setup pins 5 and 7 change interrupt mask
-    PCMSK3 |= channel_mask;
+    // DDRD &= ~channel_mask;
+    // PORTD |= channel_mask;
+    // // Setup pins 5 and 7 change interrupt mask
+    // PCMSK3 |= channel_mask;
 }
 
 void enable(){
-    PCICR = _BV(PCIE3);
+    // PCICR = _BV(PCIE3);
 }
 
 void disable(){
-    PCICR = _BV(PCIE3);
+    // PCICR = _BV(PCIE3);
 }
 
 void teardown(){
     // Must disable output before changing data direction
-    PORTD &= ~channel_mask;
-    DDRD |= channel_mask;
-    PCMSK3 &= ~channel_mask;
+    // PORTD &= ~channel_mask;
+    // DDRD |= channel_mask;
+    // PCMSK3 &= ~channel_mask;
 }
 
 int16_t read(){
