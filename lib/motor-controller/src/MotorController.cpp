@@ -7,9 +7,12 @@
 #include <PIController.h>
 #include <NoOverflow.h>
 
+#define Board_LED_Pin                                GPIO13
+#define Board_LED_GPIO_Port                          GPIOC
+
 namespace MotorController{
 
-#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/6
+#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/4
 
 #define PWM_CALC(percentage) (uint32_t)(timer_top)*percentage/UINT8_MAX
 
@@ -34,8 +37,7 @@ void _setPWM(uint8_t val){
         //val = 0;
     }
     disable();
-    //timer_set_counter(TIM1, PWM_CALC(val) );
-    timer_set_oc_value(TIM1, TIM_OC1, val);
+    timer_set_oc_value(TIM1, TIM_OC1, PWM_CALC(val));
     enable();
 }
 
@@ -44,11 +46,14 @@ int16_t volatile error_observation = 0;
 
 static int16_t motor_position = 0;
 static uint16_t volatile interrupt_prescaler = 0;
-// Motor Controller interrupt with downscaled control check
-void tim1_isr(){
-    timer_clear_flag(TIM1, TIM_SR_UIF);
 
-    const uint16_t interrupt_count_top = timer_frequency/control_frequency;
+}
+
+// Motor Controller interrupt with downscaled control check
+void tim1_cc_isr(){
+    timer_clear_flag(TIM1, TIM_SR_CC1IF);
+    gpio_toggle(Board_LED_GPIO_Port, Board_LED_Pin);
+    /*const uint16_t interrupt_count_top = timer_frequency/control_frequency;
     if(++interrupt_prescaler >= interrupt_count_top){
         interrupt_prescaler = 0;
         int16_t new_motor_position = WheelGauge::read();
@@ -60,40 +65,55 @@ void tim1_isr(){
             _setPWM(controller.stepControlEstimation(speed, error_observation, integral_observation));
         }
         motor_position = new_motor_position;
-    }
+    }*/
 }
 
+namespace MotorController{
 
 void init(){
-	nvic_enable_irq(NVIC_TIM1_UP_IRQ);
-	nvic_set_priority(NVIC_TIM1_UP_IRQ, 127);
+	rcc_periph_clock_enable(RCC_GPIOC);
+	rcc_periph_clock_enable(RCC_GPIOA);
+
+	gpio_set(Board_LED_GPIO_Port, Board_LED_Pin);
+	gpio_set_mode(Board_LED_GPIO_Port, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, Board_LED_Pin);
+
+	nvic_enable_irq(NVIC_TIM1_CC_IRQ);
+	//nvic_set_priority(NVIC_TIM1_UP_IRQ, 16);
 
     // Intialize Timer at 10% Duty cycle
     // Phase correct PWM mode, count to OCR2A
 	rcc_periph_clock_enable(RCC_TIM1);
     rcc_periph_clock_enable(RCC_AFIO);
+
 	timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
 				TIM_CR1_DIR_UP);
     timer_enable_oc_output(TIM1, TIM_OC1);
-    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO8);
-    timer_set_oc_polarity_low(TIM1, TIM_OC1);
+    timer_set_oc_mode(TIM1, TIM_OC1, TIM_OCM_TOGGLE);
+
+    gpio_set_mode(GPIO_BANK_TIM1_CH1, 
+                GPIO_MODE_OUTPUT_2_MHZ, 
+                GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_TIM1_CH1);
+
+    timer_set_oc_polarity_high(TIM1, TIM_OC1);
     #ifdef FIT0441_DRIVE
         timer_set_oc_polarity_high(TIM1, TIM_OC1);
     #endif
     // prescaler /1
-	timer_set_prescaler(TIM1, 1); // Timer peripheral clock 24MHz
-    // Count to 500 for 24kHx
+	timer_set_prescaler(TIM1, 1000); // Timer peripheral clock 24MHz
+    // Count to 500 for 24kHz
 	timer_set_period(TIM1, timer_top);
-    timer_clear_flag(TIM1, TIM_SR_UIF);
+    timer_clear_flag(TIM1, TIM_SR_CC1IF);
     timer_set_oc_value(TIM1, TIM_OC1, PWM_CALC(default_pwm_level));
+    timer_enable_counter(TIM1);
 }
 
 void enable(){
-    timer_enable_irq(TIM1, TIM_DIER_UIE);
+    timer_enable_irq(TIM1, TIM_DIER_CC1IE);
 }
 
 void disable(){
-    timer_disable_irq(TIM1, TIM_DIER_UIE);
+    timer_disable_irq(TIM1, TIM_DIER_CC1IE);
 }
 
 void setPWM(uint8_t val){
@@ -102,7 +122,10 @@ void setPWM(uint8_t val){
 }
 
 uint8_t getPWM(){
-    return TIM_CCR1(TIM1);///timer_top*100;
+    return TIM_CCR1(TIM1)*100/timer_top;
+}
+uint8_t getTimer(){
+    return timer_get_counter(TIM1)*100/timer_top;
 }
 
 int16_t setSpeed(int16_t milliturns_per_sec){

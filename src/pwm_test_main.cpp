@@ -18,19 +18,23 @@ int main(void)
     UsbSerial::reenumerate();
 	usbd_device* usbd_dev{UsbSerial::init()};
     MotorController::init();
-	char msg_str[] = "PWM is 00\n";
+	char msg_str[] = "PWM is 0000\n";
 
 	i = 0;
-	int j =  0;
+	uint8_t j =  0;
 	uint8_t status_buf[2] = {0};
+	MotorController::enable();
 	while (1){
 		UsbSerial::poll();
 		if((i%80000 == 0) && UsbSerial::isConnected() == true){
-            msg_str[7] = MotorController::getPWM()%10 + 48;
-			UsbSerial::writeString(msg_str, 10);
+            msg_str[7] = (MotorController::getTimer()/100)%10 + 48;
+            msg_str[8] = (MotorController::getTimer()/100)%10 + 48;
+            msg_str[9] = (MotorController::getTimer()/10)%10 + 48;
+            msg_str[10] = (MotorController::getTimer())%10 + 48;
+			UsbSerial::writeString(msg_str, 12);
             j++;
             
-			MotorController::setPWM(j);
+			//MotorController::setPWM(j);
 
 		}
 		i++;
