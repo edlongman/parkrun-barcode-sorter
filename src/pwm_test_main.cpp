@@ -24,6 +24,7 @@ int main(void)
 	uint8_t j =  0;
 	uint8_t status_buf[2] = {0};
 	MotorController::enable();
+	MotorController::setPWM(127);
 	while (1){
 		UsbSerial::poll();
 		if((i%80000 == 0) && UsbSerial::isConnected() == true){
