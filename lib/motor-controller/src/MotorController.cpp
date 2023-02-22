@@ -12,7 +12,7 @@
 
 namespace MotorController{
 
-#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/4
+#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/2
 
 #define PWM_CALC(percentage) (uint32_t)(timer_top)*percentage/UINT8_MAX
 
@@ -50,8 +50,8 @@ static uint16_t volatile interrupt_prescaler = 0;
 }
 
 // Motor Controller interrupt with downscaled control check
-void tim1_cc_isr(){
-    timer_clear_flag(TIM1, TIM_SR_CC1IF);
+void tim1_up_isr(){
+    timer_clear_flag(TIM1, TIM_SR_UIF);
     gpio_toggle(Board_LED_GPIO_Port, Board_LED_Pin);
     /*const uint16_t interrupt_count_top = timer_frequency/control_frequency;
     if(++interrupt_prescaler >= interrupt_count_top){
@@ -78,7 +78,7 @@ void init(){
 	gpio_set_mode(Board_LED_GPIO_Port, GPIO_MODE_OUTPUT_2_MHZ,
 		      GPIO_CNF_OUTPUT_PUSHPULL, Board_LED_Pin);
 
-	nvic_enable_irq(NVIC_TIM1_CC_IRQ);
+	nvic_enable_irq(NVIC_TIM1_UP_IRQ);
 	//nvic_set_priority(NVIC_TIM1_UP_IRQ, 16);
 
     // Intialize Timer at 10% Duty cycle
@@ -89,13 +89,14 @@ void init(){
 	timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
 				TIM_CR1_DIR_UP);
     timer_enable_oc_output(TIM1, TIM_OC1);
-    timer_set_oc_mode(TIM1, TIM_OC1, TIM_OCM_TOGGLE);
+    timer_enable_break_main_output(TIM1);
+    timer_set_oc_mode(TIM1, TIM_OC1, TIM_OCM_PWM1);
 
     gpio_set_mode(GPIO_BANK_TIM1_CH1, 
                 GPIO_MODE_OUTPUT_2_MHZ, 
                 GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_TIM1_CH1);
 
-    timer_set_oc_polarity_high(TIM1, TIM_OC1);
+    timer_set_oc_polarity_low(TIM1, TIM_OC1);
     #ifdef FIT0441_DRIVE
         timer_set_oc_polarity_high(TIM1, TIM_OC1);
     #endif
@@ -103,17 +104,18 @@ void init(){
 	timer_set_prescaler(TIM1, 1000); // Timer peripheral clock 24MHz
     // Count to 500 for 24kHz
 	timer_set_period(TIM1, timer_top);
-    timer_clear_flag(TIM1, TIM_SR_CC1IF);
+    timer_clear_flag(TIM1, TIM_SR_UIF);
     timer_set_oc_value(TIM1, TIM_OC1, PWM_CALC(default_pwm_level));
     timer_enable_counter(TIM1);
+    timer_set_repetition_counter(TIM1, 1); // Update event only at bottom
 }
 
 void enable(){
-    timer_enable_irq(TIM1, TIM_DIER_CC1IE);
+    timer_enable_irq(TIM1, TIM_DIER_UIE);
 }
 
 void disable(){
-    timer_disable_irq(TIM1, TIM_DIER_CC1IE);
+    timer_disable_irq(TIM1, TIM_DIER_UIE);
 }
 
 void setPWM(uint8_t val){
