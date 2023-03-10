@@ -12,7 +12,7 @@
 
 namespace MotorController{
 
-#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/2
+#define PHASE_CORRECT_TOP(FREQ, PRESCALE) (F_CPU)/PRESCALE/FREQ/4
 
 #define PWM_CALC(percentage) (uint32_t)(timer_top)*percentage/UINT8_MAX
 
@@ -51,9 +51,10 @@ static uint16_t volatile interrupt_prescaler = 0;
 
 // Motor Controller interrupt with downscaled control check
 void tim1_up_isr(){
+    using namespace MotorController;
     timer_clear_flag(TIM1, TIM_SR_UIF);
     gpio_toggle(Board_LED_GPIO_Port, Board_LED_Pin);
-    /*const uint16_t interrupt_count_top = timer_frequency/control_frequency;
+    const uint16_t interrupt_count_top = timer_frequency/control_frequency;
     if(++interrupt_prescaler >= interrupt_count_top){
         interrupt_prescaler = 0;
         int16_t new_motor_position = WheelGauge::read();
@@ -65,7 +66,7 @@ void tim1_up_isr(){
             _setPWM(controller.stepControlEstimation(speed, error_observation, integral_observation));
         }
         motor_position = new_motor_position;
-    }*/
+    }
 }
 
 namespace MotorController{
@@ -101,7 +102,7 @@ void init(){
         timer_set_oc_polarity_high(TIM1, TIM_OC1);
     #endif
     // prescaler /1
-	timer_set_prescaler(TIM1, 1000); // Timer peripheral clock 24MHz
+	timer_set_prescaler(TIM1, 1); // Timer peripheral clock 24MHz
     // Count to 500 for 24kHz
 	timer_set_period(TIM1, timer_top);
     timer_clear_flag(TIM1, TIM_SR_UIF);
