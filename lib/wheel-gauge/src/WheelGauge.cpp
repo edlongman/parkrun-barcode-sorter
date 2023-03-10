@@ -1,48 +1,43 @@
 #include "WheelGauge.h"
-//#include <avr/io.h>
-//#include <avr/interrupt.h>
+#include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/rcc.h>
 
 namespace WheelGauge{
 
-const uint8_t channel_mask = 0;//_BV(PD7) | _BV(PD5);
-
-volatile int16_t motor_position = 0; // in edge counts
-volatile uint8_t encoder_state = 0;
-
-// Switch derived from encoder logic state table
-// Very quick, only recording original pulses with no processing
-/*ISR(PCINT3_vect){
-    encoder_state = ((encoder_state & _BV(5)) >> 1) | (PIND & _BV(5));
-    motor_position++;
-}*/
-
 void init(){
-    // set pins 5 and 7 as inputs with pull-ups
-    // DDRD &= ~channel_mask;
-    // PORTD |= channel_mask;
-    // // Setup pins 5 and 7 change interrupt mask
-    // PCMSK3 |= channel_mask;
+    
+	rcc_periph_clock_enable(RCC_TIM3);
+    rcc_periph_clock_enable(RCC_AFIO);
+
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO6 | GPIO7);
+    gpio_clear(GPIOA, GPIO6 | GPIO7);
+
+    // Use timer 3 as encoder counter
+    timer_ic_set_input(TIM3, TIM_IC1, TIM_IC_IN_TI1);
+    #ifdef FIT0441_DRIVE
+        timer_slave_set_mode(TIM3, TIM_SMCR_SMS_ECM1);
+        timer_slave_set_trigger(TIM3, TIM_SMCR_TS_TI1FP1);
+    #else
+        timer_ic_set_input(TIM3, TIM_IC2, TIM_IC_IN_TI2);
+        timer_slave_set_mode(TIM3, TIM_SMCR_SMS_EM3);
+    #endif
+
 }
 
 void enable(){
-    // PCICR = _BV(PCIE3);
+    timer_enable_counter(TIM3);
 }
 
 void disable(){
-    // PCICR = _BV(PCIE3);
+    timer_disable_counter(TIM3);
 }
 
 void teardown(){
-    // Must disable output before changing data direction
-    // PORTD &= ~channel_mask;
-    // DDRD |= channel_mask;
-    // PCMSK3 &= ~channel_mask;
 }
 
 int16_t read(){
-    WheelGauge::disable();
-    return motor_position;
-    WheelGauge::enable();
+    return timer_get_counter(TIM3);
 }
 
 int16_t milliturnsDistance(int16_t prev, int16_t current){
@@ -51,11 +46,6 @@ int16_t milliturnsDistance(int16_t prev, int16_t current){
 
 int16_t rawFromMilliturns(int16_t milliturns){
     return (int32_t)milliturns*gearing_num/gearing_denom*motor_counts_per_rev/1000;
-}
-
-uint8_t encoderState(){
-    return encoder_state;
-    //return PIND & 0xF0;
 }
 
 }

@@ -5,7 +5,7 @@
 
 namespace WheelGauge{
 #ifdef FIT0441_DRIVE
-const int16_t motor_counts_per_rev = 45*6*2;
+const int16_t motor_counts_per_rev = 45*6;
 const uint8_t gearing_num = 80;
 const uint8_t gearing_denom = 15;
 #else
