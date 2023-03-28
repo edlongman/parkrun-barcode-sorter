@@ -50,12 +50,13 @@ int main(void)
 	timer_enable_irq(TIM2, TIM_DIER_CC1IE);
 	timer_enable_irq(TIM2, TIM_DIER_UIE);
 
+	UsbSerial::reenumerate();
 
 	usbd_device* usbd_dev{UsbSerial::init()};
 
 	i = 0;
 	int j =  0;
-	char count_str[10] = "Count:0";
+	char count_str[10] = "Count:0\n";
 	uint8_t status_buf[2] = {0};
 	while (1){
 		if(i==0x00){
@@ -63,8 +64,8 @@ int main(void)
 		}
 		UsbSerial::poll();
 		if(i==20000 && UsbSerial::isConnected() == true){
-			// gpio_set(GPIOC, Board_LED_Pin);
-			UsbSerial::writeString(count_str, 7);
+			count_str[6]=j%10+48;
+			UsbSerial::writeString(count_str, 8);
 
 		}
 		if(UsbSerial::isConnected() == true){
@@ -81,6 +82,6 @@ int main(void)
 			//gpio_set(GPIOC, Board_LED_Pin);
 		}
 		i++;
-		if(i>1000000)i=0;
+		if(i>1000000)i=0,j++;
 	}
 }

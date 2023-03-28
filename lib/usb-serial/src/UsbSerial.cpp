@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "UsbSerial.h"
 #include "UsbSerialDeviceInfo.h"
+#include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/usb/usbd.h>
 #include <libopencm3/usb/cdc.h>
@@ -92,6 +93,18 @@ static void cdcacm_suspend(){
 
 static void cdcacm_resume(){
 	usb_setup = true;
+}
+
+void reenumerate(){
+	// Reenumerate USB
+	rcc_periph_clock_enable(RCC_GPIOA);
+	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO12);
+	gpio_clear(GPIOA, GPIO12);
+	
+	for (unsigned int i = 0; i < 0x20000; i++)
+		__asm__("nop");
+
+	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO12);
 }
 
 usbd_device* init(){

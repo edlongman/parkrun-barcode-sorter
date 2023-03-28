@@ -4,6 +4,7 @@
 #define _USB_SERIAL_H
 
 namespace UsbSerial{
+    void reenumerate();
     usbd_device* init();
     bool isConnected();
     void poll();

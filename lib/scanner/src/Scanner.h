@@ -1,12 +1,11 @@
-#include <avr/io.h>
-#include <util/delay.h>
+#include <libopencm3/stm32/gpio.h>
 
 #ifndef _SCANNER_H
 #define _SCANNER_H
 
 namespace Scanner{
 
-const uint8_t triggerPin = 6;
+const unsigned int triggerPin = GPIO14;
 
 const uint16_t baud = 57600;
 
@@ -14,10 +13,10 @@ void init();
 void enable();
 void disable();
 inline void startScan(){
-    PORTC &= ~_BV(triggerPin);
+    gpio_set(GPIOB, triggerPin);
 }
 inline void endScan(){
-    PORTC |= _BV(triggerPin);
+    gpio_clear(GPIOB, triggerPin);
 }
 void scanLine(char* buffer, uint8_t length);
 bool isScanComplete();

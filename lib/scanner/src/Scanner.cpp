@@ -1,19 +1,24 @@
 #include <Scanner.h>
-#include <avr/interrupt.h>
+#include <libopencm3/stm32/usart.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/rcc.h>
 
 namespace Scanner{
 
-char* rx_scan_buffer = nullptr;
 uint8_t rx_scan_position = 0;
 uint8_t rx_scan_limit = 0;
 bool rx_end_received = true;
 char last_received = 0;
+char* rx_scan_buffer = nullptr;
 
-const uint8_t nResetPin = 0;
+const unsigned int nResetPin = GPIO13;
 
-ISR(USART1_RX_vect){
+}
+
+void usart1_isr(){
+    using namespace Scanner;
     // Read byte regardless of buffer state
-    last_received = UDR1;
+    last_received = usart_recv(USART1);
     if(rx_scan_buffer != nullptr && rx_scan_position < rx_scan_limit && not rx_end_received){
         rx_scan_buffer[rx_scan_position] = last_received;
         rx_scan_position++;
@@ -28,21 +33,36 @@ ISR(USART1_RX_vect){
     }
 }
 
+namespace Scanner{
+
 void init(){
-    PORTC |= _BV(nResetPin) | _BV(triggerPin); // Enable Reset Pull-up and set trigger to default high
-    DDRC |= _BV(triggerPin);
+    gpio_set(GPIOB, triggerPin); // Enable Reset Pull-up and set trigger to default high
+    gpio_clear(GPIOB, nResetPin);
+	rcc_periph_clock_enable(RCC_GPIOB);
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, triggerPin);
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, nResetPin);
+    rcc_periph_clock_enable(RCC_USART1);
+    usart_set_mode(USART1, USART_MODE_TX_RX);
+    usart_set_baudrate(USART1, baud);
+    usart_enable(USART1);
 
-    UBRR1 = F_CPU/16/baud-1;
-    UCSR1B = _BV(RXEN1) | _BV(TXEN1);
+}
 
+void commsEnable(){
+    usart_enable_rx_interrupt(USART1);
+}
+
+void commsDisable(){
+    usart_disable_rx_interrupt(USART1);
 }
 
 void enable(){
-    UCSR1B |= _BV(RXCIE1);
+    gpio_set(GPIOB, nResetPin);
+    commsEnable();
 }
 
 void disable(){
-    UCSR1B &= ~_BV(RXCIE1);
+    commsDisable();
 }
 
 void scanLine(char* buffer, uint8_t length){
