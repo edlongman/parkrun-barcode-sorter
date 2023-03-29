@@ -19,8 +19,8 @@ int main(){
 	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
 		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO13);
 
-    //Scanner::init();
-    //Scanner::enable();
+    Scanner::init();
+    Scanner::enable();
     //MotorController::init();
     //MotorController::enable();
     const char no_scan_text[20] = "No scan seen.\r\n";
@@ -45,8 +45,7 @@ int main(){
             //UsbSerial::writeString(read_report,20);
         }
         else{
-            if(UsbSerial::writeString(no_scan_text,13))
-                gpio_clear(GPIOC, GPIO13);
+            UsbSerial::writeString(no_scan_text,13);
         }
         int i=0;
         while (i<10000){
