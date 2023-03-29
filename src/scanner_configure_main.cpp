@@ -4,7 +4,7 @@
 #include <MotorController.h>
 #include <string.h>
 
-const uint8_t max_read = 8;
+const uint8_t max_read = 15;
 char token_read[max_read] = {0};
 
 int main(){
@@ -35,6 +35,7 @@ int main(){
                 __asm__("nop");
             }
             if(Scanner::isScanComplete()){
+	            gpio_clear(GPIOC, GPIO13);
                 break;
             }
         }
@@ -42,7 +43,7 @@ int main(){
         if(Scanner::isScanComplete()){
             char read_report[20] = "Read code: ";
             strncat(read_report, token_read, max_read);
-            //UsbSerial::writeString(read_report,20);
+            UsbSerial::writeString(token_read,8);
         }
         else{
             UsbSerial::writeString(no_scan_text,13);
