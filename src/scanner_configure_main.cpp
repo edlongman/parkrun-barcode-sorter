@@ -14,21 +14,25 @@ int main(){
     UsbSerial::reenumerate();
 	usbd_device* usbd_dev{UsbSerial::init()};
 
-    Scanner::init();
-    Scanner::enable();
+	rcc_periph_clock_enable(RCC_GPIOC);
+	gpio_set(GPIOC, GPIO13);
+	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO13);
+
+    //Scanner::init();
+    //Scanner::enable();
     //MotorController::init();
     //MotorController::enable();
-    const char no_scan_text[] = "No scan seen.\r\n";
+    const char no_scan_text[20] = "No scan seen.\r\n";
     while(1){
 		UsbSerial::poll();
         Scanner::scanLine(token_read, max_read);
         Scanner::startScan();
-        for(int i=0;i<1000;i++){
+        for(int i=0;i<10000;i++){
 		    UsbSerial::poll();
-            // Approx 250us delay
-            while (i<16000){
+            // Approx 25us delay
+            for(volatile int j=0;j<160;j++){
                 __asm__("nop");
-                i++;
             }
             if(Scanner::isScanComplete()){
                 break;
@@ -38,18 +42,20 @@ int main(){
         if(Scanner::isScanComplete()){
             char read_report[20] = "Read code: ";
             strncat(read_report, token_read, max_read);
-            UsbSerial::writeString(read_report,20);
+            //UsbSerial::writeString(read_report,20);
         }
         else{
-            UsbSerial::writeString(no_scan_text,20);
+            if(UsbSerial::writeString(no_scan_text,13))
+                gpio_clear(GPIOC, GPIO13);
         }
         int i=0;
-        while (i<16000){
+        while (i<10000){
             UsbSerial::poll();
-            for(int j=0;j<1000;j++){
+            for(volatile int j=0;j<160;j++){
                 __asm__("nop");
             }
             i++;
         }
+        gpio_set(GPIOC, GPIO13);
     }
 }
