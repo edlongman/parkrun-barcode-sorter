@@ -7,7 +7,7 @@ namespace Scanner{
 
 const unsigned int triggerPin = GPIO14;
 
-const uint16_t baud = 57600;
+const uint16_t baud = 9600;
 
 void init();
 void enable();

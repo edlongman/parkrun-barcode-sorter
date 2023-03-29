@@ -16,7 +16,6 @@ const unsigned int nResetPin = GPIO13;
 }
 
 void usart1_isr(){
-	gpio_clear(GPIOC, GPIO13);
 
     using namespace Scanner;
     // Read byte regardless of buffer state
