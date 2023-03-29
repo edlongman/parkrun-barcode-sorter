@@ -43,27 +43,29 @@ bool checkFlapOutput(uint8_t flap, int16_t wheel_position){
 
     for(uint8_t i=queue_tail;i!=queue_head;i++,i%=queue_size){
         if(queue[i].getOutput() == flap){
-            int16_t travelled = queue[i].getDistance(wheel_position);
-            if(travelled<close_threshold && travelled>open_threshold){
+            int16_t travelledFront = queue[i].getOpenDistance(wheel_position);
+            int16_t travelledBack = queue[i].getCloseDistance(wheel_position);
+            if(travelledBack<close_threshold && travelledFront>open_threshold){
                 return true;
             }
         }
     }
 }
 
-bool insertToken(char* token_read){
+Token* insertToken(char* token_read){
     if(isQueueFull()){
-        return false;
+        return nullptr;
     }
     queue[queue_head] = Token(WheelGauge::read(), token_read, output_base, sort_index);
+    Token* inserted_address = &queue[queue_head];
     queue_head=(queue_head+1)%queue_size;
-    return true;
+    return inserted_address;
 }
 
 int16_t expiryDistance = 1500;
 void popExpiredTokens(int16_t wheel_position){
     for(uint8_t i=queue_tail;i!=queue_head;i++,i%=queue_size){
-        int16_t travelled = queue[i].getDistance(wheel_position);
+        int16_t travelled = queue[i].getOpenDistance(wheel_position);
         if(travelled<expiryDistance){
             return;
         }

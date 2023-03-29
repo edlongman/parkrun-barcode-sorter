@@ -2,7 +2,8 @@
 #include <WheelGauge.h>
 
 Token::Token(){
-    intial_position = 0;
+    insert_front = 0;
+    insert_back = 0;
     value = 0;
     output = 255;
 }
@@ -17,7 +18,8 @@ uint16_t spow(const uint8_t base, uint8_t exponent){
 }
 
 Token::Token(const int16_t initialPosition, const char* raw_input, const uint8_t base, const uint8_t sort_index){
-    intial_position = initialPosition;
+    insert_front = initialPosition;
+    setInsertBack(initialPosition);
     int16_t accum = 0;
     if(raw_input[0] == 'P'){
         for(int i=1;i<6;i++){
@@ -33,8 +35,18 @@ Token::Token(const int16_t initialPosition, const char* raw_input, const uint8_t
     const uint16_t base_column = spow(base, sort_index);
     output = value/base_column%base;
 }
-int16_t Token::getDistance(int16_t current_position){
-    return WheelGauge::milliturnsDistance(intial_position, current_position);
+
+void Token::setInsertBack(int16_t frontPosition){
+    // Token is 85 milliTurns wide
+    insert_back = frontPosition - WheelGauge::rawFromMilliturns(85);
+}
+
+int16_t Token::getOpenDistance(int16_t current_position){
+    return WheelGauge::milliturnsDistance(insert_front, current_position);
+}
+
+int16_t Token::getCloseDistance(int16_t current_position){
+    return WheelGauge::milliturnsDistance(insert_back, current_position);
 }
 
 uint8_t Token::getOutput(){
