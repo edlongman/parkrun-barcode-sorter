@@ -13,10 +13,10 @@ void init();
 void enable();
 void disable();
 inline void startScan(){
-    gpio_set(GPIOB, triggerPin);
+    gpio_clear(GPIOB, triggerPin);
 }
 inline void endScan(){
-    gpio_clear(GPIOB, triggerPin);
+    gpio_set(GPIOB, triggerPin);
 }
 void scanLine(char* buffer, uint8_t length);
 bool isScanComplete();

@@ -28,7 +28,7 @@ int main(){
 		UsbSerial::poll();
         Scanner::scanLine(token_read, max_read);
         Scanner::startScan();
-        for(int i=0;i<10000;i++){
+        for(int i=0;i<20000;i++){
 		    UsbSerial::poll();
             // Approx 25us delay
             for(volatile int j=0;j<160;j++){
@@ -42,11 +42,11 @@ int main(){
         Scanner::endScan();
         if(Scanner::isScanComplete()){
             char read_report[20] = "Read code: ";
-            strncat(read_report, token_read, max_read);
-            UsbSerial::writeString(token_read,8);
+            strncat(read_report, token_read, 20);
+            UsbSerial::writeString(read_report,16);
         }
         else{
-            UsbSerial::writeString(no_scan_text,13);
+            UsbSerial::writeString(no_scan_text,15);
         }
         int i=0;
         while (i<10000){

@@ -16,7 +16,6 @@ const unsigned int nResetPin = GPIO13;
 }
 
 void usart1_isr(){
-
     using namespace Scanner;
     // Read byte regardless of buffer state
     last_received = usart_recv(USART1);
@@ -45,8 +44,8 @@ void init(){
     rcc_periph_clock_enable(RCC_USART1);
 	nvic_enable_irq(NVIC_USART1_IRQ);
 
-    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO9);
-    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO8);
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_USART1_RX);
     gpio_set(GPIOA, GPIO8);
 
     usart_set_mode(USART1, USART_MODE_TX_RX);
