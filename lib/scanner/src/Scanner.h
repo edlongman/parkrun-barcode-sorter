@@ -7,17 +7,11 @@ namespace Scanner{
 
 const unsigned int triggerPin = GPIO14;
 
-const uint16_t baud = 9600;
-
-void init();
+void init(unsigned int baud);
 void enable();
 void disable();
-inline void startScan(){
-    gpio_clear(GPIOB, triggerPin);
-}
-inline void endScan(){
-    gpio_set(GPIOB, triggerPin);
-}
+void startScan();
+void endScan();
 void scanLine(char* buffer, uint8_t length);
 bool isScanComplete();
 

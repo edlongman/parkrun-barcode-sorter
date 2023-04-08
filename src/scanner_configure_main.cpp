@@ -4,6 +4,7 @@
 #include <MotorController.h>
 #include <string.h>
 
+const unsigned int starting_scanner_baud = 9600;
 const uint8_t max_read = 15;
 char token_read[max_read] = {0};
 
@@ -19,7 +20,7 @@ int main(){
 	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
 		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO13);
 
-    Scanner::init();
+    Scanner::init(starting_scanner_baud);
     Scanner::enable();
     //MotorController::init();
     //MotorController::enable();
@@ -39,7 +40,6 @@ int main(){
                 break;
             }
         }
-        Scanner::endScan();
         if(Scanner::isScanComplete()){
             char read_report[20] = "Read code: ";
             strncat(read_report, token_read, 20);
@@ -48,6 +48,7 @@ int main(){
         else{
             UsbSerial::writeString(no_scan_text,15);
         }
+        Scanner::endScan();
         int i=0;
         while (i<10000){
             UsbSerial::poll();
