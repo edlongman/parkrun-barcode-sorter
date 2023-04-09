@@ -9,6 +9,7 @@ namespace Scanner{
 
 uint8_t rx_scan_limit = 0;
 char* rx_scan_buffer = nullptr;
+uint8_t* command_response_buffer;
 
 namespace CommandMode {
     typedef enum {
@@ -25,20 +26,10 @@ typedef struct {
     bool high_speed;
 } CommsState;
 
-namespace CommandType{
-    typedef enum {
-        SUCCESS = 0x00,
-        READ = 0x07,   
-        WRITE = 0x08,
-        FACTORY_RST = 0x09
-    } command_type_num;
-}
-
-typedef uint8_t command_type;
-
 // 32 byte TX buffer
 constexpr uint8_t payload_length{26};
 constexpr uint8_t command_header_length{6};
+constexpr uint8_t crc_length{2};
 typedef struct {
     uint8_t position{0};
     union {
@@ -157,6 +148,19 @@ void disable(){
 void resetRxBuffer(){
     rx_buffer.position = 0;
     std::fill_n(rx_buffer.data_union.buffer, rx_length_limit, 0);
+}
+
+void sendCommandForResponse(const command_type type, const uint16_t address, const uint8_t length, const uint8_t* send, uint8_t* response){
+    // Don't care about command, fill with a value for now
+    response[0] = 0x55;
+    response[1] = 0x54;
+}
+
+bool isTxComplete(){
+    const auto tx_fields = tx_buffer.data_union.fields;
+    // Check for valid lengths
+    return (tx_fields.length > 0 && tx_fields.length<payload_length-crc_length
+        && tx_buffer.position >= command_header_length + tx_fields.length + crc_length);
 }
 
 void startScan(){

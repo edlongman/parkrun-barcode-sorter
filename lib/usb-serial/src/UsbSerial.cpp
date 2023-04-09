@@ -133,7 +133,12 @@ void poll(){
 
 bool writeString(const char* string, uint16_t len){
     if(isConnected() || len<64){
-        usbd_ep_write_packet(usbd_dev, 0x82, string, len);
+		// Set string length to before null char or length
+		unsigned int i;
+		for(i=0; i<len; i++){
+			if(string[i]==0)break;
+		}
+        usbd_ep_write_packet(usbd_dev, 0x82, string, i);
         return true;
     }
     return false;
