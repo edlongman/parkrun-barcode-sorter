@@ -26,6 +26,8 @@ void endScan();
 void sendCommandForResponse(const command_type type, const uint16_t address, const uint8_t length, const uint8_t* send, uint8_t* response);
 void scanLine(char* buffer, uint8_t length);
 bool isScanComplete();
+bool isCommandTxComplete();
+bool isCommandRxComplete();
 
 }
 

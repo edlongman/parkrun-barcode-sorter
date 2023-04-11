@@ -5,6 +5,12 @@
 #include <algorithm>
 #include <math.h>
 
+namespace std{
+uint8_t min(uint8_t x, uint8_t y){
+    return std::min((unsigned int)x, (unsigned int)y);
+}
+}
+
 namespace Scanner{
 
 uint8_t rx_scan_limit = 0;
@@ -32,6 +38,7 @@ constexpr uint8_t command_header_length{6};
 constexpr uint8_t crc_length{2};
 typedef struct {
     uint8_t position{0};
+    uint8_t limit{0};
     union {
         char buffer[payload_length+command_header_length];
         struct {
@@ -100,6 +107,12 @@ void usart1_isr(){
             rx_buffer.position++;
         }
     }
+    else if(usart_get_flag(USART1, USART_SR_TXE)){
+        usart_send(USART1, tx_buffer.data_union.buffer[tx_buffer.position++]);
+        if(tx_buffer.position >= tx_buffer.limit){
+            usart_disable_tx_interrupt(USART1);
+        }
+    }
 }
 
 namespace Scanner{
@@ -150,17 +163,57 @@ void resetRxBuffer(){
     std::fill_n(rx_buffer.data_union.buffer, rx_length_limit, 0);
 }
 
-void sendCommandForResponse(const command_type type, const uint16_t address, const uint8_t length, const uint8_t* send, uint8_t* response){
-    // Don't care about command, fill with a value for now
-    response[0] = 0x55;
-    response[1] = 0x54;
+void prepareCommand(const command_type type, const uint16_t address, const uint8_t length, const uint8_t* send, uint8_t* response){
+    auto tx_fields = &tx_buffer.data_union.fields;
+    // Swapped order for little endian
+    tx_fields->head = 0x007E;
+    tx_fields->type = type;
+    tx_fields->length = length;
+    tx_fields->address = address;
+    uint8_t copy_limit = std::min((unsigned int)payload_length - crc_length, (unsigned int)length);
+    auto crc_field = std::copy_n(rx_scan_buffer, copy_limit, tx_fields->payload);
+    // Do not verify special value
+    crc_field[0] = 0xAB;
+    crc_field[1] = 0xCD;
+
+    // Set tx tracking points and start transmission
+    tx_buffer.position = 0;
+    tx_buffer.limit = std::min(command_header_length + length + crc_length, command_header_length + payload_length);
 }
 
-bool isTxComplete(){
-    const auto tx_fields = tx_buffer.data_union.fields;
+void sendCommandForResponse(const command_type type, const uint16_t address, const uint8_t length, const uint8_t* send, uint8_t* response){
+    prepareCommand(type, address, length, send, response);
+
+    comms_state.mode = CommandMode::COMMAND;
+    rx_buffer.position = 0;
+    usart_send(USART1, tx_buffer.data_union.buffer[tx_buffer.position++]);
+    usart_enable_tx_interrupt(USART1);
+    // Don't care about command, fill with a value for now
+    command_response_buffer = response;
+    command_response_buffer[0] = 0x55;
+    command_response_buffer[1] = 0x54;
+}
+
+bool isCommandTxComplete(){
     // Check for valid lengths
+    const auto tx_fields = tx_buffer.data_union.fields;
     return (tx_fields.length > 0 && tx_fields.length<payload_length-crc_length
-        && tx_buffer.position >= command_header_length + tx_fields.length + crc_length);
+                && tx_buffer.position >= command_header_length + tx_fields.length + crc_length);
+}
+
+bool isCommandRxComplete(){
+    const auto rx_fields = rx_buffer.data_union.fields;
+    unsigned int declared_length = rx_fields.length;
+    if(declared_length == 0)declared_length = 256;
+    uint8_t buffer_limit = std::min(response_header_length + rx_fields.length + crc_length, rx_length_limit);
+    if (comms_state.mode == CommandMode::COMMAND && rx_buffer.position >= buffer_limit){
+        if(command_response_buffer!=nullptr){
+            std::copy_n(rx_buffer.data_union.fields.payload, buffer_limit, command_response_buffer);
+        }
+        comms_state.mode = CommandMode::OFF;
+        return true;
+    }
+    return false;
 }
 
 void startScan(){
