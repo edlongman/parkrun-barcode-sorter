@@ -19,6 +19,7 @@ typedef uint8_t command_type;
 const unsigned int triggerPin = GPIO14;
 
 void init(unsigned int baud);
+void changeSpeed(unsigned int baud, uint8_t* data_response);
 void enable();
 void disable();
 void startScan();

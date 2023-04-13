@@ -29,7 +29,7 @@ namespace CommandMode {
 
 typedef struct {
     CommandMode::Num mode;
-    bool high_speed;
+    unsigned int baud_speed;
 } CommsState;
 
 // 32 byte TX buffer
@@ -111,6 +111,22 @@ void usart1_isr(){
         usart_send(USART1, tx_buffer.data_union.buffer[tx_buffer.position++]);
         if(tx_buffer.position >= tx_buffer.limit){
             usart_disable_tx_interrupt(USART1);
+            if(comms_state.mode == CommandMode::SPEED_CHANGE){
+                comms_state.mode = CommandMode::COMMAND;
+                // USART_CR1(USART1) |= USART_CR1_TCIE;
+            }
+        }
+    }
+    else if(usart_get_flag(USART1, USART_FLAG_TC)){
+        if(comms_state.mode == CommandMode::SPEED_CHANGE){
+            // usart_disable(USART1);
+            // Disable frame complete interrupt
+            // USART_CR1(USART1) &= ~USART_CR1_TCIE;
+            // ?? Clear frame complete flag (not implemented)
+            // USART_SR(USART1) &= ~USART_SR_TC;
+            //usart_set_baudrate(USART1, comms_state.baud_speed);
+            comms_state.mode = CommandMode::COMMAND;
+            // usart_enable(USART1);
         }
     }
 }
@@ -138,6 +154,27 @@ void init(unsigned int baud){
     usart_set_baudrate(USART1, baud);
     usart_enable(USART1);
 
+}
+
+void changeSpeed(unsigned int baud, uint8_t* data_response){
+    // Swapped address bytes for little endian
+    uint16_t baud_address = 0x2A00;
+    constexpr uint8_t baud_reg_size = 2;
+    uint8_t* send_data;
+    uint8_t reg57k[baud_reg_size] = {0x34, 0x00}; // 57600 Baud
+    uint8_t reg9k6[baud_reg_size] = {0x39, 0x01}; // 9600 Baud
+    switch(baud){
+        case 57600:
+            send_data = reg57k;
+            break;
+        default: 
+        case 9600: 
+            baud = 9600;
+            send_data = reg9k6;
+    }
+    Scanner::sendCommandForResponse(Scanner::CommandType::WRITE, baud_address, 2, send_data, data_response);
+    comms_state.baud_speed = baud;
+    comms_state.mode = CommandMode::SPEED_CHANGE;
 }
 
 void commsEnable(){
@@ -171,7 +208,7 @@ void prepareCommand(const command_type type, const uint16_t address, const uint8
     tx_fields->length = length;
     tx_fields->address = address;
     uint8_t copy_limit = std::min((unsigned int)payload_length - crc_length, (unsigned int)length);
-    auto crc_field = std::copy_n(rx_scan_buffer, copy_limit, tx_fields->payload);
+    auto crc_field = std::copy_n(send, copy_limit, tx_fields->payload);
     // Do not verify special value
     crc_field[0] = 0xAB;
     crc_field[1] = 0xCD;
@@ -191,7 +228,7 @@ void sendCommandForResponse(const command_type type, const uint16_t address, con
     // Don't care about command, fill with a value for now
     command_response_buffer = response;
     command_response_buffer[0] = 0x55;
-    command_response_buffer[1] = 0x54;
+    //command_response_buffer[1] = 0x54;
 }
 
 bool isCommandTxComplete(){

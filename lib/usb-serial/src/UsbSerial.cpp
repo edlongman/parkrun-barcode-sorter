@@ -131,6 +131,14 @@ void poll(){
 	usbd_poll(usbd_dev);
 }
 
+void pollDelay(unsigned int us){
+    poll();
+    // Approx 1/6.5us per loop
+    for(volatile int j=0;j<us*13/2;j++){
+        __asm__("nop");
+    }
+}
+
 bool writeString(const char* string, uint16_t len){
     if(isConnected() || len<64){
 		// Set string length to before null char or length

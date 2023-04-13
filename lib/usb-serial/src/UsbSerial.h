@@ -9,6 +9,7 @@ namespace UsbSerial{
     bool isConnected();
     void poll();
     bool writeString(const char* str, uint16_t len);
+    void pollDelay(unsigned int us);
 }
 
 #endif /* _USB_SERIAL_H */
