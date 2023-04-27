@@ -212,6 +212,18 @@ void prepareCommand(const command_type type, const uint16_t address, const uint8
     // Do not verify special value
     crc_field[0] = 0xAB;
     crc_field[1] = 0xCD;
+    if(type == CommandType::SAVE && address == 0x00){
+        if(send[0] == 0x00){
+            // Save CRC Special Value
+            crc_field[0] = 0xDE;
+            crc_field[1] = 0xC8;
+        }
+        else if(send[0] == 0xFF){
+            // Factory Reset Special Value
+            crc_field[0] = 0x00; // ?? unknown
+            crc_field[1] = 0x00; // ?? unknown
+        }
+    }
 
     // Set tx tracking points and start transmission
     tx_buffer.position = 0;

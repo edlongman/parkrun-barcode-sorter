@@ -99,7 +99,15 @@ void configureScanner(){
         if(isResponseReceived)break;
     }
     printRegValue(data_response, baud_reg_size);
-    
+
+    uint8_t dummy_data = 0;
+    Scanner::sendCommandForResponse(Scanner::CommandType::SAVE, 0, 1, &dummy_data, data_response);
+    isResponseReceived = false;
+    for(unsigned int i=0; i<10000; i++){
+        UsbSerial::pollDelay(25);
+        isResponseReceived = Scanner::isCommandRxComplete();
+        if(isResponseReceived)break;
+    }
     unsigned int i=0;
     while (i<10000){
         UsbSerial::pollDelay(25);

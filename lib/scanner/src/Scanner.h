@@ -10,7 +10,7 @@ namespace CommandType{
         SUCCESS = 0x00,
         READ = 0x07,   
         WRITE = 0x08,
-        FACTORY_RST = 0x09
+        SAVE = 0x09
     } command_type_num;
 }
 
